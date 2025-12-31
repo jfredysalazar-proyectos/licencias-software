@@ -14,6 +14,7 @@ export default function Home() {
   const [cartOpen, setCartOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showSearchResults, setShowSearchResults] = useState(false);
 
   const { data: categories } = trpc.categories.list.useQuery();
   const { data: products } = trpc.products.list.useQuery();
@@ -58,7 +59,7 @@ export default function Home() {
 
         {/* Search Bar */}
         <div className="container py-8">
-          <div className="max-w-2xl mx-auto">
+          <div className="max-w-2xl mx-auto relative">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <Input
@@ -66,9 +67,69 @@ export default function Home() {
                 placeholder="Buscar licencias de software..."
                 className="pl-10 h-12"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setShowSearchResults(e.target.value.length > 0);
+                }}
+                onFocus={() => setShowSearchResults(searchQuery.length > 0)}
+                onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
               />
             </div>
+            
+            {/* Real-time Search Results Dropdown */}
+            {showSearchResults && searchQuery && (
+              <div className="absolute top-full mt-2 w-full bg-card border border-border rounded-lg shadow-lg max-h-96 overflow-y-auto z-50">
+                {filteredProducts && filteredProducts.length > 0 ? (
+                  <div className="p-2">
+                    {filteredProducts.slice(0, 5).map((product) => (
+                      <a
+                        key={product.id}
+                        href={`/producto/${product.slug}`}
+                        className="flex items-center gap-3 p-3 hover:bg-accent rounded-lg transition-colors"
+                        onClick={() => {
+                          setShowSearchResults(false);
+                          setSearchQuery("");
+                        }}
+                      >
+                        <div className="w-12 h-12 rounded overflow-hidden bg-gradient-to-br from-blue-50 to-gray-100 flex-shrink-0">
+                          {product.imageUrl ? (
+                            <img
+                              src={product.imageUrl}
+                              alt={product.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-gray-300 font-bold">
+                              {product.name.charAt(0)}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{product.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {product.shortDescription || product.description}
+                          </p>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <p className="font-bold text-primary">
+                            ${product.basePrice.toLocaleString("es-CO")}
+                          </p>
+                        </div>
+                      </a>
+                    ))}
+                    {filteredProducts.length > 5 && (
+                      <div className="text-center py-2 text-sm text-muted-foreground">
+                        +{filteredProducts.length - 5} más resultados
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="p-6 text-center text-muted-foreground">
+                    <p>No se encontraron productos</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

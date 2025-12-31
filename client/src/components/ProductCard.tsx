@@ -20,8 +20,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   };
 
   return (
-    <Link href={`/producto/${product.slug}`}>
-      <Card className="group hover:shadow-lg transition-all duration-300 cursor-pointer h-full flex flex-col">
+    <Card className="group hover:shadow-lg transition-all duration-300 h-full flex flex-col">
         <CardContent className="p-0">
           {/* Product Image */}
           <div className="relative aspect-square overflow-hidden rounded-t-lg bg-gradient-to-br from-blue-50 to-gray-100">
@@ -59,14 +58,13 @@ export default function ProductCard({ product }: ProductCardProps) {
           </div>
         </CardContent>
 
-        <CardFooter className="p-4 pt-0 mt-auto flex items-center justify-between">
-          <div className="flex flex-col">
-            <span className="text-xs text-muted-foreground">Desde</span>
-            <span className="text-2xl font-bold text-primary">
-              ${product.basePrice.toLocaleString("es-CO")}
-            </span>
-          </div>
-          <div className="flex flex-col gap-2">
+        <CardFooter className="p-4 pt-0 mt-auto flex flex-col gap-3">
+          <div className="flex items-center justify-between w-full">
+            <div className="flex flex-col">
+              <span className="text-2xl font-bold text-primary">
+                ${product.basePrice.toLocaleString("es-CO")}
+              </span>
+            </div>
             {product.inStock === 1 ? (
               <Badge variant="outline" className="text-green-600 border-green-600">
                 En Stock
@@ -76,17 +74,27 @@ export default function ProductCard({ product }: ProductCardProps) {
                 Agotado
               </Badge>
             )}
+          </div>
+          <div className="flex gap-2 w-full">
+            <Link href={`/producto/${product.slug}`} className="flex-1">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+              >
+                Ver Más
+              </Button>
+            </Link>
             <Button
               size="sm"
               onClick={handleAddToCart}
               disabled={product.inStock === 0}
-              className="w-full"
+              className="flex-1 bg-black text-white hover:bg-gray-800"
             >
-              Agregar
+              Comprar
             </Button>
           </div>
         </CardFooter>
       </Card>
-    </Link>
   );
 }

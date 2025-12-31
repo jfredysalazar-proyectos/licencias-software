@@ -95,3 +95,9 @@
 
 ## Ajustes de Diseño
 - [x] Eliminar barra azul de TRM del encabezado
+
+## Mejoras de UX y Búsqueda
+- [x] Implementar búsqueda en tiempo real con resultados mientras se escribe
+- [x] Eliminar texto "Desde" del precio en ProductCard
+- [x] Cambiar botón único por dos botones: "Ver Más" y "Comprar"
+- [x] Estilizar botón "Comprar" con fondo negro y texto blanco
