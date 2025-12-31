@@ -43,9 +43,10 @@ describe("admin.categories", () => {
     const { ctx } = createAdminContext();
     const caller = appRouter.createCaller(ctx);
 
+    const timestamp = Date.now();
     const newCategory = {
-      name: "Test Category",
-      slug: "test-category",
+      name: `Test Category ${timestamp}`,
+      slug: `test-category-${timestamp}`,
       description: "A test category",
       iconUrl: "/icons/test.webp",
     };

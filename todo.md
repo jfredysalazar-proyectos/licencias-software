@@ -156,3 +156,9 @@
 - [x] Generar iconos profesionales para 4 categorías
 - [x] Actualizar base de datos con URLs de iconos
 - [x] Crear tests para CRUD de categorías (21/21 tests pasando)
+
+## Rediseño de Categorías
+- [x] Cambiar formato de cuadrícula a botones horizontales
+- [x] Aplicar fondo negro a los botones (activo) y gris oscuro (inactivo)
+- [x] Mostrar logo pequeño (20px) a la izquierda sin fondo
+- [x] Mantener efecto hover (bg-gray-700) y estado activo (bg-black)
