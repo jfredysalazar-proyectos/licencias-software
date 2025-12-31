@@ -92,8 +92,8 @@ export const adminRouter = router({
 
       ctx.res.cookie("admin_session", sessionData, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
+        secure: ctx.req.protocol === "https",
+        sameSite: ctx.req.protocol === "https" ? "none" : "lax",
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         path: "/",
       });
@@ -114,20 +114,30 @@ export const adminRouter = router({
     return { success: true };
   }),
 
-  me: adminProcedure.query(async ({ ctx }) => {
-    const admin = await db.getAdminByUsername(ctx.admin.username);
-    if (!admin) {
-      throw new TRPCError({
-        code: "NOT_FOUND",
-        message: "Admin not found",
-      });
+  me: publicProcedure.query(async ({ ctx }) => {
+    const adminSession = ctx.req.cookies?.["admin_session"];
+    
+    if (!adminSession) {
+      return null;
     }
-    return {
-      id: admin.id,
-      username: admin.username,
-      email: admin.email,
-      name: admin.name,
-    };
+
+    try {
+      const adminData = JSON.parse(Buffer.from(adminSession, "base64").toString());
+      const admin = await db.getAdminByUsername(adminData.username);
+      
+      if (!admin || admin.active === 0) {
+        return null;
+      }
+
+      return {
+        id: admin.id,
+        username: admin.username,
+        email: admin.email,
+        name: admin.name,
+      };
+    } catch (error) {
+      return null;
+    }
   }),
 
   // ==================== PRODUCTS ====================

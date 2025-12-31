@@ -135,3 +135,11 @@
 - [x] Agregar indicador de progreso de upload
 - [x] Validar tipo y tamaño de archivo en frontend (5MB max) y backend
 - [x] Crear tests para funcionalidad de upload (16/16 tests pasando)
+
+## Corrección de Autenticación Admin
+- [x] Revisar flujo de login y gestión de cookies
+- [x] Corregir configuración de cookie (secure y sameSite dinámicos)
+- [x] Cambiar procedimiento me a publicProcedure para evitar loop
+- [x] Implementar verificación de sesión en AdminLayout con retry:false
+- [x] Agregar invalidación de cache después del login
+- [x] Mejorar manejo de errores en el proceso de autenticación

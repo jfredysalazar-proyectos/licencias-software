@@ -13,10 +13,13 @@ export default function AdminLogin() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const utils = trpc.useUtils();
 
   const loginMutation = trpc.admin.login.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("Inicio de sesión exitoso");
+      // Invalidate the me query to refetch with new session
+      await utils.admin.me.invalidate();
       setLocation("/admin/dashboard");
     },
     onError: (error) => {

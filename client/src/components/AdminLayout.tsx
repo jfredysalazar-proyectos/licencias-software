@@ -19,7 +19,10 @@ interface AdminLayoutProps {
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const [location, setLocation] = useLocation();
-  const { data: admin, isLoading } = trpc.admin.me.useQuery();
+  const { data: admin, isLoading, error } = trpc.admin.me.useQuery(undefined, {
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
   const logoutMutation = trpc.admin.logout.useMutation({
     onSuccess: () => {
       toast.success("Sesión cerrada");
@@ -35,8 +38,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     );
   }
 
-  if (!admin) {
-    setLocation("/admin/login");
+  if (!admin || error) {
+    if (location !== "/admin/login") {
+      setLocation("/admin/login");
+    }
     return null;
   }
 
