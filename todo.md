@@ -104,3 +104,8 @@
 
 ## Ajustes de ProductDetail
 - [x] Eliminar palabra "Desde" del precio en página de detalle de producto
+
+## Ajustes de Logo Header
+- [x] Aumentar significativamente el tamaño del logo en el header (h-16 → h-20 / 80px)
+- [x] Eliminar todos los bordes del logo
+- [x] Mejorar visibilidad del logo
