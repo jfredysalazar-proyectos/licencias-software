@@ -1,6 +1,6 @@
 import { eq, like, and, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, categories, Category, InsertCategory, products, Product, InsertProduct, orders, Order, InsertOrder } from "../drizzle/schema";
+import { InsertUser, users, categories, Category, InsertCategory, products, Product, InsertProduct, orders, Order, InsertOrder, admins, Admin, InsertAdmin, settings, Setting, InsertSetting } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -154,4 +154,118 @@ export async function getUserOrders(userId: number): Promise<Order[]> {
   const db = await getDb();
   if (!db) return [];
   return await db.select().from(orders).where(eq(orders.userId, userId)).orderBy(desc(orders.createdAt));
+}
+
+
+// ==================== ADMIN FUNCTIONS ====================
+
+export async function getAdminByUsername(username: string): Promise<Admin | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(admins).where(eq(admins.username, username)).limit(1);
+  return result[0];
+}
+
+export async function updateAdminLastLogin(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(admins).set({ lastLogin: new Date() }).where(eq(admins.id, id));
+}
+
+export async function getAllAdmins(): Promise<Admin[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(admins);
+}
+
+// ==================== SETTINGS FUNCTIONS ====================
+
+export async function getSetting(key: string): Promise<Setting | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(settings).where(eq(settings.key, key)).limit(1);
+  return result[0];
+}
+
+export async function getAllSettings(): Promise<Setting[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(settings);
+}
+
+export async function upsertSetting(key: string, value: string, description?: string): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.insert(settings).values({
+    key,
+    value,
+    description,
+  }).onDuplicateKeyUpdate({
+    set: { value, description, updatedAt: new Date() },
+  });
+}
+
+// ==================== ADMIN PRODUCT MANAGEMENT ====================
+
+export async function createProduct(product: InsertProduct): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(products).values(product);
+  return result[0].insertId;
+}
+
+export async function updateProduct(id: number, product: Partial<InsertProduct>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(products).set(product).where(eq(products.id, id));
+}
+
+export async function deleteProduct(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(products).where(eq(products.id, id));
+}
+
+// ==================== ADMIN CATEGORY MANAGEMENT ====================
+
+export async function createCategory(category: InsertCategory): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(categories).values(category);
+  return result[0].insertId;
+}
+
+export async function updateCategory(id: number, category: Partial<InsertCategory>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(categories).set(category).where(eq(categories.id, id));
+}
+
+export async function deleteCategory(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(categories).where(eq(categories.id, id));
+}
+
+// ==================== ADMIN ORDER MANAGEMENT ====================
+
+export async function getAllOrders(): Promise<Order[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(orders).orderBy(desc(orders.createdAt));
+}
+
+export async function updateOrderStatus(id: number, status: "pending" | "completed" | "cancelled"): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(orders).set({ status }).where(eq(orders.id, id));
+}
+
+// ==================== ADMIN USER MANAGEMENT ====================
+
+export async function getAllUsers(): Promise<typeof users.$inferSelect[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(users).orderBy(desc(users.createdAt));
 }

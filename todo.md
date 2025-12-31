@@ -109,3 +109,19 @@
 - [x] Aumentar significativamente el tamaño del logo en el header (h-16 → h-20 / 80px)
 - [x] Eliminar todos los bordes del logo
 - [x] Mejorar visibilidad del logo
+
+## Panel de Administración (Backoffice)
+- [x] Crear tabla de configuración en base de datos para settings
+- [x] Crear tabla de administradores con credenciales
+- [x] Implementar sistema de autenticación independiente para admin
+- [x] Crear página de login de administrador (/admin/login)
+- [x] Crear layout de dashboard administrativo con sidebar
+- [x] Implementar gestión de productos (CRUD completo)
+- [x] Implementar gestión de categorías (vista de listado)
+- [x] Implementar vista de clientes registrados
+- [x] Implementar vista de pedidos/órdenes con cambio de estado
+- [x] Crear página de configuración (WhatsApp, sitio, etc.)
+- [x] Agregar procedimientos tRPC para operaciones admin
+- [x] Proteger rutas administrativas con middleware
+- [x] Agregar rutas de admin en App.tsx
+- [x] Crear tests para funcionalidades admin (13/13 tests pasando)

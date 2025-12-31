@@ -8,6 +8,13 @@ import { CartProvider } from "./contexts/CartContext";
 import Home from "./pages/Home";
 import ProductDetail from "./pages/ProductDetail";
 import MyOrders from "./pages/MyOrders";
+import AdminLogin from "./pages/admin/Login";
+import AdminDashboard from "./pages/admin/Dashboard";
+import AdminProducts from "./pages/admin/Products";
+import AdminCategories from "./pages/admin/Categories";
+import AdminOrders from "./pages/admin/Orders";
+import AdminCustomers from "./pages/admin/Customers";
+import AdminSettings from "./pages/admin/Settings";
 
 function Router() {
   return (
@@ -15,6 +22,16 @@ function Router() {
       <Route path={"/"} component={Home} />
       <Route path="/producto/:slug" component={ProductDetail} />
       <Route path="/mis-pedidos" component={MyOrders} />
+      
+      {/* Admin Routes */}
+      <Route path="/admin/login" component={AdminLogin} />
+      <Route path="/admin/dashboard" component={AdminDashboard} />
+      <Route path="/admin/products" component={AdminProducts} />
+      <Route path="/admin/categories" component={AdminCategories} />
+      <Route path="/admin/orders" component={AdminOrders} />
+      <Route path="/admin/customers" component={AdminCustomers} />
+      <Route path="/admin/settings" component={AdminSettings} />
+      
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
