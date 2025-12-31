@@ -12,19 +12,11 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <img 
-                src="/logo.png" 
-                alt="LicenciasdeSoftware.org" 
-                className="h-10 w-auto"
-              />
-              <div className="flex flex-col">
-                <span className="font-bold text-lg leading-none">
-                  LicenciasdeSoftware
-                </span>
-                <span className="text-xs text-primary font-semibold">.org</span>
-              </div>
-            </div>
+            <img 
+              src="/logo.png" 
+              alt="LicenciasdeSoftware.org" 
+              className="h-12 w-auto"
+            />
             <p className="text-sm text-muted-foreground">
               Tu tienda confiable de licencias de software originales con entrega instantánea.
             </p>

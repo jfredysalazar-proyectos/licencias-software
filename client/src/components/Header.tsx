@@ -41,19 +41,11 @@ export default function Header({ onCartClick, onSearchClick }: HeaderProps) {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link href="/">
-              <div className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
-                <img 
-                  src="/logo.png" 
-                  alt="LicenciasdeSoftware.org" 
-                  className="h-10 w-auto"
-                />
-                <div className="flex flex-col">
-                  <span className="font-bold text-lg leading-none text-foreground">
-                    LicenciasdeSoftware
-                  </span>
-                  <span className="text-xs text-primary font-semibold">.org</span>
-                </div>
-              </div>
+              <img 
+                src="/logo.png" 
+                alt="LicenciasdeSoftware.org" 
+                className="h-12 w-auto cursor-pointer hover:opacity-80 transition-opacity"
+              />
             </Link>
 
             {/* Right Actions */}

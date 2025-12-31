@@ -73,3 +73,9 @@
 - [x] Actualizar título en index.html
 - [x] Actualizar favicon
 - [x] Actualizar referencias de marca en componentes
+
+## Ajustes de Logo
+- [x] Quitar texto "LicenciasdeSoftware.org" del Header
+- [x] Quitar texto "LicenciasdeSoftware.org" del Footer
+- [x] Ajustar tamaño del logo para mejor visualización (h-12)
+- [x] Simplificar diseño mostrando solo el logo
