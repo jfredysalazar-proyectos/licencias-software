@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { eq, like, and, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, users, categories, Category, InsertCategory, products, Product, InsertProduct, orders, Order, InsertOrder } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +89,69 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+// Categories queries
+export async function getAllCategories(): Promise<Category[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(categories);
+}
+
+export async function getCategoryBySlug(slug: string): Promise<Category | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(categories).where(eq(categories.slug, slug)).limit(1);
+  return result[0];
+}
+
+// Products queries
+export async function getAllProducts(): Promise<Product[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(products).orderBy(desc(products.featured), desc(products.createdAt));
+}
+
+export async function getFeaturedProducts(): Promise<Product[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(products).where(eq(products.featured, 1)).limit(6);
+}
+
+export async function getProductsByCategory(categoryId: number): Promise<Product[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(products).where(eq(products.categoryId, categoryId));
+}
+
+export async function getProductBySlug(slug: string): Promise<Product | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(products).where(eq(products.slug, slug)).limit(1);
+  return result[0];
+}
+
+export async function searchProducts(query: string): Promise<Product[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(products).where(like(products.name, `%${query}%`));
+}
+
+// Orders queries
+export async function createOrder(order: InsertOrder): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(orders).values(order);
+  return result[0].insertId;
+}
+
+export async function getOrderById(id: number): Promise<Order | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(orders).where(eq(orders.id, id)).limit(1);
+  return result[0];
+}
+
+export async function getUserOrders(userId: number): Promise<Order[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(orders).where(eq(orders.userId, userId)).orderBy(desc(orders.createdAt));
+}
