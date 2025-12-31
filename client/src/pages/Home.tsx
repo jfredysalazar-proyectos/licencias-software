@@ -8,6 +8,7 @@ import HeroSection from "@/components/HeroSection";
 import ProductCard from "@/components/ProductCard";
 import CartDrawer from "@/components/CartDrawer";
 import Footer from "@/components/Footer";
+import CategoryCarousel from "@/components/CategoryCarousel";
 import { useCart } from "@/contexts/CartContext";
 
 export default function Home() {
@@ -133,41 +134,13 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Category Filters */}
+        {/* Category Filters Carousel */}
         <div className="container pb-8">
-          <div className="flex flex-wrap gap-3 justify-center">
-            <button
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
-                selectedCategory === null
-                  ? "bg-black text-white"
-                  : "bg-gray-800 text-gray-300 hover:bg-gray-700"
-              }`}
-              onClick={() => setSelectedCategory(null)}
-            >
-              <span className="text-lg">★</span>
-              <span>Todos</span>
-            </button>
-            {categories?.map((category) => (
-              <button
-                key={category.id}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
-                  selectedCategory === category.id
-                    ? "bg-black text-white"
-                    : "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                }`}
-                onClick={() => setSelectedCategory(category.id)}
-              >
-                {category.iconUrl && (
-                  <img
-                    src={category.iconUrl}
-                    alt={category.name}
-                    className="w-5 h-5 object-contain"
-                  />
-                )}
-                <span>{category.name}</span>
-              </button>
-            ))}
-          </div>
+          <CategoryCarousel
+            categories={categories || []}
+            selectedCategory={selectedCategory}
+            onSelectCategory={setSelectedCategory}
+          />
         </div>
 
         {/* Products Grid */}

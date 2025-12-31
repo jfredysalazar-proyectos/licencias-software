@@ -162,3 +162,10 @@
 - [x] Aplicar fondo negro a los botones (activo) y gris oscuro (inactivo)
 - [x] Mostrar logo pequeño (20px) a la izquierda sin fondo
 - [x] Mantener efecto hover (bg-gray-700) y estado activo (bg-black)
+
+## Carrusel de Categorías
+- [x] Implementar carrusel horizontal con embla-carousel
+- [x] Organizar botones en dos filas (split automático)
+- [x] Agregar controles de navegación (flechas izquierda/derecha)
+- [x] Mantener diseño de botones negro/gris con iconos
+- [x] Crear componente CategoryCarousel reutilizable
