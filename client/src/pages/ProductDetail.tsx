@@ -150,7 +150,6 @@ export default function ProductDetail() {
 
               <div className="border-t border-b py-6">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-sm text-muted-foreground">Desde</span>
                   <span className="text-4xl font-bold text-primary">
                     ${product.basePrice.toLocaleString("es-CO")}
                   </span>

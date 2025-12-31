@@ -101,3 +101,6 @@
 - [x] Eliminar texto "Desde" del precio en ProductCard
 - [x] Cambiar botón único por dos botones: "Ver Más" y "Comprar"
 - [x] Estilizar botón "Comprar" con fondo negro y texto blanco
+
+## Ajustes de ProductDetail
+- [x] Eliminar palabra "Desde" del precio en página de detalle de producto
