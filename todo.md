@@ -65,3 +65,11 @@
 - [x] Crear tests para categorías
 - [x] Ejecutar y validar todos los tests
 - [ ] Verificar funcionamiento en mobile y desktop
+
+## Rebranding a LicenciasdeSoftware.org
+- [x] Generar logo impactante para LicenciasdeSoftware.org
+- [x] Actualizar Header con nuevo logo y nombre
+- [x] Actualizar Footer con nuevo nombre
+- [x] Actualizar título en index.html
+- [x] Actualizar favicon
+- [x] Actualizar referencias de marca en componentes

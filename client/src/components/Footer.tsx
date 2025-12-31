@@ -12,15 +12,17 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-xl">SL</span>
-              </div>
+            <div className="flex items-center gap-3">
+              <img 
+                src="/logo.png" 
+                alt="LicenciasdeSoftware.org" 
+                className="h-10 w-auto"
+              />
               <div className="flex flex-col">
                 <span className="font-bold text-lg leading-none">
-                  SoftwareLicenses
+                  LicenciasdeSoftware
                 </span>
-                <span className="text-xs text-muted-foreground">Colombia</span>
+                <span className="text-xs text-primary font-semibold">.org</span>
               </div>
             </div>
             <p className="text-sm text-muted-foreground">
@@ -114,7 +116,7 @@ export default function Footer() {
 
         <div className="mt-8 pt-8 border-t border-border">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-            <p>© 2025 SoftwareLicenses.Co - Todos los derechos reservados</p>
+            <p>© 2025 LicenciasdeSoftware.org - Todos los derechos reservados</p>
             <p>⭐ 4.9/5 basado en más de 10,000+ reseñas verificadas</p>
           </div>
         </div>
