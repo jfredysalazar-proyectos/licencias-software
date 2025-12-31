@@ -15,7 +15,10 @@ interface AdminContext {
 
 // Middleware to check if user is admin
 const adminProcedure = publicProcedure.use(async ({ ctx, next }) => {
-  const adminSession = ctx.req.cookies?.["admin_session"];
+  // Check for token in Authorization header or cookie
+  const authHeader = ctx.req.headers.authorization;
+  const tokenFromHeader = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+  const adminSession = tokenFromHeader || ctx.req.cookies?.["admin_session"];
   
   if (!adminSession) {
     throw new TRPCError({
@@ -24,8 +27,6 @@ const adminProcedure = publicProcedure.use(async ({ ctx, next }) => {
     });
   }
 
-  // In production, you'd verify a JWT or session token here
-  // For now, we'll use a simple cookie-based approach
   try {
     const adminData = JSON.parse(Buffer.from(adminSession, "base64").toString());
     const admin = await db.getAdminByUsername(adminData.username);
@@ -90,16 +91,12 @@ export const adminRouter = router({
         JSON.stringify({ adminId: admin.id, username: admin.username })
       ).toString("base64");
 
-      ctx.res.cookie("admin_session", sessionData, {
-        httpOnly: true,
-        secure: ctx.req.protocol === "https",
-        sameSite: ctx.req.protocol === "https" ? "none" : "lax",
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        path: "/",
-      });
+      // Return session token to be stored in localStorage
+      // This approach works better in development environments
 
       return {
         success: true,
+        token: sessionData,
         admin: {
           id: admin.id,
           username: admin.username,
@@ -115,7 +112,10 @@ export const adminRouter = router({
   }),
 
   me: publicProcedure.query(async ({ ctx }) => {
-    const adminSession = ctx.req.cookies?.["admin_session"];
+    // Check for token in Authorization header or cookie
+    const authHeader = ctx.req.headers.authorization;
+    const tokenFromHeader = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+    const adminSession = tokenFromHeader || ctx.req.cookies?.["admin_session"];
     
     if (!adminSession) {
       return null;

@@ -25,8 +25,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   });
   const logoutMutation = trpc.admin.logout.useMutation({
     onSuccess: () => {
+      // Clear admin token from localStorage
+      localStorage.removeItem('admin_token');
       toast.success("Sesión cerrada");
-      setLocation("/admin/login");
+      window.location.href = "/admin/login";
     },
   });
 

@@ -16,11 +16,16 @@ export default function AdminLogin() {
   const utils = trpc.useUtils();
 
   const loginMutation = trpc.admin.login.useMutation({
-    onSuccess: async () => {
+    onSuccess: async (data) => {
+      // Store token in localStorage
+      if (data.token) {
+        localStorage.setItem('admin_token', data.token);
+      }
       toast.success("Inicio de sesión exitoso");
       // Invalidate the me query to refetch with new session
       await utils.admin.me.invalidate();
-      setLocation("/admin/dashboard");
+      // Force reload to apply new headers
+      window.location.href = "/admin/dashboard";
     },
     onError: (error) => {
       toast.error(error.message || "Credenciales inválidas");

@@ -169,3 +169,12 @@
 - [x] Agregar controles de navegación (flechas izquierda/derecha)
 - [x] Mantener diseño de botones negro/gris con iconos
 - [x] Crear componente CategoryCarousel reutilizable
+
+## Corrección Login Admin (Crítico)
+- [x] Cambiar estrategia de cookies a localStorage + Authorization header
+- [x] Actualizar login para retornar token
+- [x] Actualizar middleware adminProcedure para aceptar token desde header
+- [x] Actualizar procedimiento me para aceptar token desde header
+- [x] Configurar tRPC client para enviar token en headers
+- [x] Actualizar Login.tsx para guardar token en localStorage
+- [x] Actualizar logout para limpiar localStorage
