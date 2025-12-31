@@ -135,21 +135,44 @@ export default function Home() {
 
         {/* Category Filters */}
         <div className="container pb-8">
-          <div className="flex flex-wrap gap-2 justify-center">
-            <Button
-              variant={selectedCategory === null ? "default" : "outline"}
+          <h2 className="text-2xl font-bold text-center mb-6">Explora por Categoría</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            <button
+              className={`flex flex-col items-center gap-3 p-4 rounded-lg border-2 transition-all hover:scale-105 ${
+                selectedCategory === null
+                  ? "border-primary bg-primary/10 shadow-md"
+                  : "border-border bg-background hover:border-primary/50"
+              }`}
               onClick={() => setSelectedCategory(null)}
             >
-              Todos
-            </Button>
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-2xl font-bold">
+                ★
+              </div>
+              <span className="font-medium text-sm text-center">Todos</span>
+            </button>
             {categories?.map((category) => (
-              <Button
+              <button
                 key={category.id}
-                variant={selectedCategory === category.id ? "default" : "outline"}
+                className={`flex flex-col items-center gap-3 p-4 rounded-lg border-2 transition-all hover:scale-105 ${
+                  selectedCategory === category.id
+                    ? "border-primary bg-primary/10 shadow-md"
+                    : "border-border bg-background hover:border-primary/50"
+                }`}
                 onClick={() => setSelectedCategory(category.id)}
               >
-                {category.name}
-              </Button>
+                {category.iconUrl ? (
+                  <img
+                    src={category.iconUrl}
+                    alt={category.name}
+                    className="w-16 h-16 object-contain"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-muted-foreground text-2xl font-bold">
+                    {category.name.charAt(0)}
+                  </div>
+                )}
+                <span className="font-medium text-sm text-center">{category.name}</span>
+              </button>
             ))}
           </div>
         </div>

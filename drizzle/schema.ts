@@ -33,7 +33,9 @@ export const categories = mysqlTable("categories", {
   name: varchar("name", { length: 100 }).notNull(),
   slug: varchar("slug", { length: 100 }).notNull().unique(),
   description: text("description"),
+  iconUrl: text("iconUrl"), // URL to category icon/logo
   createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
 export type Category = typeof categories.$inferSelect;

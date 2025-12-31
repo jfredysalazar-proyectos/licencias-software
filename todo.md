@@ -143,3 +143,16 @@
 - [x] Implementar verificación de sesión en AdminLayout con retry:false
 - [x] Agregar invalidación de cache después del login
 - [x] Mejorar manejo de errores en el proceso de autenticación
+
+## CRUD Completo de Categorías
+- [x] Agregar campo de icono/logo en schema de categorías
+- [x] Implementar procedimientos tRPC para CRUD de categorías
+- [x] Crear formulario de creación de categoría con upload de icono
+- [x] Crear formulario de edición de categoría
+- [x] Implementar eliminación de categoría con confirmación
+- [x] Validar nombre único de categoría (slug)
+- [x] Agregar preview de icono en listado de categorías
+- [x] Mostrar iconos de categorías en el frontend (Home)
+- [x] Generar iconos profesionales para 4 categorías
+- [x] Actualizar base de datos con URLs de iconos
+- [x] Crear tests para CRUD de categorías (21/21 tests pasando)

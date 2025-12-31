@@ -208,6 +208,7 @@ export const adminRouter = router({
           name: z.string().min(1),
           slug: z.string().min(1),
           description: z.string().optional(),
+          iconUrl: z.string().optional(),
         })
       )
       .mutation(async ({ input }) => {
@@ -222,6 +223,7 @@ export const adminRouter = router({
           name: z.string().min(1).optional(),
           slug: z.string().min(1).optional(),
           description: z.string().optional(),
+          iconUrl: z.string().optional(),
         })
       )
       .mutation(async ({ input }) => {
