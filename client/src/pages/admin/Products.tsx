@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, X } from "lucide-react";
 type Product = {
   id: number;
   name: string;
@@ -44,6 +44,8 @@ export default function AdminProducts() {
   const { data: categories } = trpc.admin.categories.list.useQuery();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -56,6 +58,18 @@ export default function AdminProducts() {
     featured: "0",
     inStock: "1",
     features: "",
+  });
+
+  const uploadImageMutation = trpc.admin.uploadImage.useMutation({
+    onSuccess: (data) => {
+      setFormData({ ...formData, imageUrl: data.url });
+      setIsUploading(false);
+      toast.success("Imagen subida exitosamente");
+    },
+    onError: (error) => {
+      setIsUploading(false);
+      toast.error(error.message || "Error al subir imagen");
+    },
   });
 
   const createMutation = trpc.admin.products.create.useMutation({
@@ -106,6 +120,7 @@ export default function AdminProducts() {
       features: "",
     });
     setEditingProduct(null);
+    setImagePreview(null);
   };
 
   const handleEdit = (product: Product) => {
@@ -122,7 +137,45 @@ export default function AdminProducts() {
       inStock: product.inStock.toString(),
       features: product.features || "",
     });
+    setImagePreview(product.imageUrl);
     setDialogOpen(true);
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Por favor selecciona un archivo de imagen");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("La imagen no debe superar 5MB");
+      return;
+    }
+
+    // Show preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      setImagePreview(result);
+      
+      // Upload to S3
+      setIsUploading(true);
+      uploadImageMutation.mutate({
+        imageData: result,
+        fileName: file.name,
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveImage = () => {
+    setImagePreview(null);
+    setFormData({ ...formData, imageUrl: "" });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -263,12 +316,51 @@ export default function AdminProducts() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="imageUrl">URL de Imagen</Label>
-                  <Input
-                    id="imageUrl"
-                    value={formData.imageUrl}
-                    onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                  />
+                  <Label htmlFor="image">Imagen del Producto</Label>
+                  <div className="flex flex-col gap-4">
+                    {imagePreview ? (
+                      <div className="relative w-full max-w-xs">
+                        <img
+                          src={imagePreview}
+                          alt="Preview"
+                          className="w-full h-48 object-cover rounded-lg border border-border"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2"
+                          onClick={handleRemoveImage}
+                          disabled={isUploading}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                        {isUploading && (
+                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-lg">
+                            <div className="text-white text-sm">Subiendo...</div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
+                        <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground mb-2">
+                          Haz clic para subir una imagen
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          PNG, JPG, WebP (máx. 5MB)
+                        </p>
+                      </div>
+                    )}
+                    <Input
+                      id="image"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      disabled={isUploading}
+                      className="cursor-pointer"
+                    />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

@@ -125,3 +125,13 @@
 - [x] Proteger rutas administrativas con middleware
 - [x] Agregar rutas de admin en App.tsx
 - [x] Crear tests para funcionalidades admin (13/13 tests pasando)
+
+## Upload de Imágenes en Gestión de Productos
+- [x] Crear procedimiento tRPC para upload de imágenes a S3
+- [x] Agregar optimización automática de imágenes a WebP (sharp)
+- [x] Implementar campo de upload en formulario de productos
+- [x] Agregar preview de imagen antes de guardar
+- [x] Implementar reemplazo de imagen al editar producto
+- [x] Agregar indicador de progreso de upload
+- [x] Validar tipo y tamaño de archivo en frontend (5MB max) y backend
+- [x] Crear tests para funcionalidad de upload (16/16 tests pasando)

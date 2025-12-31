@@ -3,6 +3,9 @@ import bcrypt from "bcryptjs";
 import { TRPCError } from "@trpc/server";
 import { publicProcedure, router } from "./_core/trpc";
 import * as db from "./db";
+import { storagePut } from "./storage";
+import sharp from "sharp";
+import { nanoid } from "nanoid";
 
 // Admin context type
 interface AdminContext {
@@ -250,6 +253,50 @@ export const adminRouter = router({
       return await db.getAllUsers();
     }),
   }),
+
+  // ==================== IMAGE UPLOAD ====================
+  uploadImage: adminProcedure
+    .input(
+      z.object({
+        imageData: z.string(), // base64 encoded image
+        fileName: z.string(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      try {
+        // Decode base64 image
+        const base64Data = input.imageData.replace(/^data:image\/\w+;base64,/, "");
+        const buffer = Buffer.from(base64Data, "base64");
+
+        // Optimize image with sharp (convert to WebP, resize if too large)
+        const optimizedBuffer = await sharp(buffer)
+          .resize(800, 800, {
+            fit: "inside",
+            withoutEnlargement: true,
+          })
+          .webp({ quality: 85 })
+          .toBuffer();
+
+        // Generate unique filename
+        const fileExtension = "webp";
+        const uniqueId = nanoid(10);
+        const fileName = `products/${uniqueId}.${fileExtension}`;
+
+        // Upload to S3
+        const { url } = await storagePut(fileName, optimizedBuffer, "image/webp");
+
+        return {
+          success: true,
+          url,
+        };
+      } catch (error) {
+        console.error("Error uploading image:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to upload image",
+        });
+      }
+    }),
 
   // ==================== SETTINGS ====================
   settings: router({
