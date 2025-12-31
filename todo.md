@@ -92,3 +92,6 @@
 - [x] Agregar dimensiones width/height a todas las imágenes
 - [x] Actualizar URLs en base de datos a formato WebP
 - [x] Script de optimización creado (optimize-images.mjs)
+
+## Ajustes de Diseño
+- [x] Eliminar barra azul de TRM del encabezado

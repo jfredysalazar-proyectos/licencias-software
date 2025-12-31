@@ -16,25 +16,8 @@ export default function Header({ onCartClick, onSearchClick }: HeaderProps) {
   const { isAuthenticated, user } = useAuth();
   const cartCount = getCartCount();
 
-  // TRM (Tasa de Cambio) - En un caso real, esto vendría de una API
-  const trm = 3800;
-  const today = new Date().toLocaleDateString("es-CO", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-
   return (
     <header className="sticky top-0 z-50 w-full">
-      {/* TRM Banner */}
-      <div className="bg-primary text-primary-foreground py-2 overflow-hidden">
-        <div className="container">
-          <div className="flex items-center justify-center gap-2 text-sm font-medium animate-fade-in">
-            <span>TRM para Hoy {today} es de: ${trm.toLocaleString("es-CO")} COP por Dólar</span>
-          </div>
-        </div>
-      </div>
-
       {/* Main Header */}
       <div className="bg-card border-b border-border">
         <div className="container">
