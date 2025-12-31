@@ -44,7 +44,7 @@ export default function Header({ onCartClick, onSearchClick }: HeaderProps) {
               <img 
                 src="/logo.png" 
                 alt="LicenciasdeSoftware.org" 
-                className="h-12 w-auto cursor-pointer hover:opacity-80 transition-opacity"
+                className="h-16 w-auto cursor-pointer hover:opacity-80 transition-opacity"
               />
             </Link>
 

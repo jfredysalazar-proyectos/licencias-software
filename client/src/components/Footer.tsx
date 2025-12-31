@@ -15,7 +15,7 @@ export default function Footer() {
             <img 
               src="/logo.png" 
               alt="LicenciasdeSoftware.org" 
-              className="h-12 w-auto"
+              className="h-14 w-auto"
             />
             <p className="text-sm text-muted-foreground">
               Tu tienda confiable de licencias de software originales con entrega instantánea.
