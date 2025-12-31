@@ -5,19 +5,19 @@ import { Button } from "@/components/ui/button";
 const heroSlides = [
   {
     id: 1,
-    image: "/images/hero-software.png",
+    image: "/images/hero-software.webp",
     title: "Tu Centro de Licencias de Software",
     subtitle: "Entrega instantánea de Windows, Office, Adobe, AutoCAD y más",
   },
   {
     id: 2,
-    image: "/images/hero-productivity.png",
+    image: "/images/hero-productivity.webp",
     title: "Aumenta tu Productividad",
     subtitle: "Microsoft Office, Office 365 y herramientas profesionales",
   },
   {
     id: 3,
-    image: "/images/hero-creative.png",
+    image: "/images/hero-creative.webp",
     title: "Creatividad Sin Límites",
     subtitle: "Adobe Creative Cloud, CapCut, Canva y más",
   },

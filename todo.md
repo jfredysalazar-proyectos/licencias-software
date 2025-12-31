@@ -83,3 +83,12 @@
 ## Ajuste de Tamaño de Logo
 - [x] Aumentar tamaño del logo en Header para mejor visibilidad (h-16 / 64px)
 - [x] Ajustar tamaño del logo en Footer proporcionalmente (h-14 / 56px)
+
+## Optimización de Imágenes
+- [x] Instalar dependencias para optimización de imágenes (sharp)
+- [x] Comprimir y optimizar imágenes existentes (logo, favicon, productos, hero)
+- [x] Convertir imágenes a formato WebP (productos y hero)
+- [x] Implementar lazy loading en componentes de imágenes
+- [x] Agregar dimensiones width/height a todas las imágenes
+- [x] Actualizar URLs en base de datos a formato WebP
+- [x] Script de optimización creado (optimize-images.mjs)

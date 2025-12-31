@@ -110,6 +110,9 @@ export default function ProductDetail() {
                   src={product.imageUrl}
                   alt={product.name}
                   className="w-full h-full object-cover"
+                  loading="lazy"
+                  width="800"
+                  height="800"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
