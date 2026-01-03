@@ -59,9 +59,6 @@ export default function Home() {
       {/* Hero Section */}
       <HeroSection />
 
-      {/* Why Choose Us Section */}
-      <WhyChooseUs />
-
         {/* Search Bar */}
         <div className="container py-8">
           <div className="max-w-2xl mx-auto relative">
@@ -191,6 +188,9 @@ export default function Home() {
             </div>
           )}
         </div>
+
+        {/* Why Choose Us Section */}
+        <WhyChooseUs />
 
         {/* Testimonials Section */}
         <div className="bg-muted py-16">

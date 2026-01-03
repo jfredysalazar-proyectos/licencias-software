@@ -209,3 +209,7 @@
 - [x] Mostrar categorías en 2-4 columnas según ancho de pantalla (grid-cols-2 sm:grid-cols-3 lg:grid-cols-4)
 - [x] Eliminar scroll horizontal
 - [x] Mantener diseño de botones negro/gris con iconos
+
+## Reordenamiento de Secciones
+- [x] Mover "Por qué Elegirnos" debajo del listado de productos
+- [x] Mantener el flujo visual de la página (Hero > Búsqueda > Categorías > Productos > Por qué Elegirnos > Testimonios > CTA)
