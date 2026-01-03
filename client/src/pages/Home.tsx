@@ -9,6 +9,7 @@ import ProductCard from "@/components/ProductCard";
 import CartDrawer from "@/components/CartDrawer";
 import Footer from "@/components/Footer";
 import CategoryCarousel from "@/components/CategoryCarousel";
+import WhyChooseUs from "@/components/WhyChooseUs";
 import { useCart } from "@/contexts/CartContext";
 
 export default function Home() {
@@ -55,8 +56,11 @@ export default function Home() {
       <Header onCartClick={() => setCartOpen(true)} />
 
       <main className="flex-1">
-        {/* Hero Section */}
-        <HeroSection />
+      {/* Hero Section */}
+      <HeroSection />
+
+      {/* Why Choose Us Section */}
+      <WhyChooseUs />
 
         {/* Search Bar */}
         <div className="container py-8">

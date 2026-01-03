@@ -187,3 +187,9 @@
 - [x] Agregar rutas en App.tsx para las nuevas páginas
 - [x] Habilitar enlaces en el Footer
 - [x] Actualizar enlaces del Footer a rutas correctas
+
+## Sección "Por qué Elegirnos"
+- [x] Crear componente WhyChooseUs con 4 tarjetas de beneficios
+- [x] Agregar iconos de lucide-react para cada beneficio (Zap, Shield, Headphones, CheckCircle)
+- [x] Integrar componente en página Home después del hero
+- [x] Estilizar con diseño profesional azul/gris y estadísticas
