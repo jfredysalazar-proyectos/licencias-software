@@ -193,3 +193,8 @@
 - [x] Agregar iconos de lucide-react para cada beneficio (Zap, Shield, Headphones, CheckCircle)
 - [x] Integrar componente en página Home después del hero
 - [x] Estilizar con diseño profesional azul/gris y estadísticas
+
+## Cambio: Eliminar Carrusel de Categorías
+- [x] Reemplazar CategoryCarousel con botones en una sola línea
+- [x] Mantener funcionalidad de filtrado por categoría
+- [x] Hacer botones responsivos con scroll horizontal en móvil (overflow-x-auto)

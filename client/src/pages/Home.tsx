@@ -8,7 +8,7 @@ import HeroSection from "@/components/HeroSection";
 import ProductCard from "@/components/ProductCard";
 import CartDrawer from "@/components/CartDrawer";
 import Footer from "@/components/Footer";
-import CategoryCarousel from "@/components/CategoryCarousel";
+
 import WhyChooseUs from "@/components/WhyChooseUs";
 import { useCart } from "@/contexts/CartContext";
 
@@ -138,13 +138,41 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Category Filters Carousel */}
+        {/* Category Filters */}
         <div className="container pb-8">
-          <CategoryCarousel
-            categories={categories || []}
-            selectedCategory={selectedCategory}
-            onSelectCategory={setSelectedCategory}
-          />
+          <div className="flex gap-3 overflow-x-auto pb-2">
+            <button
+              onClick={() => setSelectedCategory(null)}
+              className={`px-6 py-2 rounded-full font-medium whitespace-nowrap transition-colors ${
+                selectedCategory === null
+                  ? 'bg-black text-white'
+                  : 'bg-gray-800 text-white hover:bg-gray-700'
+              }`}
+            >
+              Todas
+            </button>
+            {categories?.map((category) => (
+              <button
+                key={category.id}
+                onClick={() => setSelectedCategory(category.id)}
+                className={`flex items-center gap-2 px-6 py-2 rounded-full font-medium whitespace-nowrap transition-colors ${
+                  selectedCategory === category.id
+                    ? 'bg-black text-white'
+                    : 'bg-gray-800 text-white hover:bg-gray-700'
+                }`}
+              >
+                {category.iconUrl && (
+                  <img
+                    src={category.iconUrl}
+                    alt={category.name}
+                    className="w-5 h-5"
+                    loading="lazy"
+                  />
+                )}
+                {category.name}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Products Grid */}
