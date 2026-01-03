@@ -178,3 +178,12 @@
 - [x] Configurar tRPC client para enviar token en headers
 - [x] Actualizar Login.tsx para guardar token en localStorage
 - [x] Actualizar logout para limpiar localStorage
+
+## Páginas Legales y de Soporte
+- [x] Crear página de Centro de Ayuda/Soporte con FAQ (8 preguntas)
+- [x] Crear página de Términos y Condiciones
+- [x] Crear página de Política de Privacidad
+- [x] Crear página de Política de Devolución y Garantía
+- [x] Agregar rutas en App.tsx para las nuevas páginas
+- [x] Habilitar enlaces en el Footer
+- [x] Actualizar enlaces del Footer a rutas correctas

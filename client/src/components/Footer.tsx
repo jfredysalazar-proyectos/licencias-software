@@ -27,25 +27,31 @@ export default function Footer() {
             <h3 className="font-semibold mb-4">Soporte</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/faq">
-                  <span className="text-muted-foreground hover:text-primary cursor-pointer transition-colors">
-                    Preguntas Frecuentes
-                  </span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/ayuda">
+                <Link href="/soporte">
                   <span className="text-muted-foreground hover:text-primary cursor-pointer transition-colors">
                     Centro de Ayuda
                   </span>
                 </Link>
               </li>
               <li>
-                <Link href="/contacto">
-                  <span className="text-muted-foreground hover:text-primary cursor-pointer transition-colors">
-                    Contáctanos
-                  </span>
-                </Link>
+                <a
+                  href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
+                    whatsappMessage
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                >
+                  Contacto Directo
+                </a>
+              </li>
+              <li>
+                <a
+                  href="mailto:soporte@licenciasdesoftware.org"
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                >
+                  Email de Soporte
+                </a>
               </li>
             </ul>
           </div>
@@ -57,7 +63,7 @@ export default function Footer() {
               <li>
                 <Link href="/terminos">
                   <span className="text-muted-foreground hover:text-primary cursor-pointer transition-colors">
-                    Términos de Servicio
+                    Términos y Condiciones
                   </span>
                 </Link>
               </li>
@@ -69,9 +75,9 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/reembolso">
+                <Link href="/devoluciones">
                   <span className="text-muted-foreground hover:text-primary cursor-pointer transition-colors">
-                    Política de Reembolso
+                    Garantía y Devoluciones
                   </span>
                 </Link>
               </li>

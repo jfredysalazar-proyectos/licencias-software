@@ -15,6 +15,10 @@ import AdminCategories from "./pages/admin/Categories";
 import AdminOrders from "./pages/admin/Orders";
 import AdminCustomers from "./pages/admin/Customers";
 import AdminSettings from "./pages/admin/Settings";
+import Support from "./pages/Support";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import Returns from "./pages/Returns";
 
 function Router() {
   return (
@@ -22,6 +26,12 @@ function Router() {
       <Route path={"/"} component={Home} />
       <Route path="/producto/:slug" component={ProductDetail} />
       <Route path="/mis-pedidos" component={MyOrders} />
+      
+      {/* Legal & Support Routes */}
+      <Route path="/soporte" component={Support} />
+      <Route path="/terminos" component={Terms} />
+      <Route path="/privacidad" component={Privacy} />
+      <Route path="/devoluciones" component={Returns} />
       
       {/* Admin Routes */}
       <Route path="/admin/login" component={AdminLogin} />
