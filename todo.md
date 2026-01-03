@@ -198,3 +198,8 @@
 - [x] Reemplazar CategoryCarousel con botones en una sola línea
 - [x] Mantener funcionalidad de filtrado por categoría
 - [x] Hacer botones responsivos con scroll horizontal en móvil (overflow-x-auto)
+
+## Corrección: Botones de Categorías Cortados
+- [x] Ajustar padding y margen del contenedor de botones (añadido -mx-4 px-4)
+- [x] Asegurar que todos los botones sean visibles
+- [x] Revisar overflow-x-auto y espaciado

@@ -140,7 +140,7 @@ export default function Home() {
 
         {/* Category Filters */}
         <div className="container pb-8">
-          <div className="flex gap-3 overflow-x-auto pb-2">
+          <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4">
             <button
               onClick={() => setSelectedCategory(null)}
               className={`px-6 py-2 rounded-full font-medium whitespace-nowrap transition-colors ${
