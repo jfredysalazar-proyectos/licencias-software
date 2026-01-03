@@ -203,3 +203,9 @@
 - [x] Ajustar padding y margen del contenedor de botones (añadido -mx-4 px-4)
 - [x] Asegurar que todos los botones sean visibles
 - [x] Revisar overflow-x-auto y espaciado
+
+## Cambio: Grid Responsivo para Categorías
+- [x] Reemplazar flex con overflow por grid responsivo
+- [x] Mostrar categorías en 2-4 columnas según ancho de pantalla (grid-cols-2 sm:grid-cols-3 lg:grid-cols-4)
+- [x] Eliminar scroll horizontal
+- [x] Mantener diseño de botones negro/gris con iconos

@@ -140,10 +140,10 @@ export default function Home() {
 
         {/* Category Filters */}
         <div className="container pb-8">
-          <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             <button
               onClick={() => setSelectedCategory(null)}
-              className={`px-6 py-2 rounded-full font-medium whitespace-nowrap transition-colors ${
+              className={`px-4 py-2 rounded-full font-medium transition-colors text-sm ${
                 selectedCategory === null
                   ? 'bg-black text-white'
                   : 'bg-gray-800 text-white hover:bg-gray-700'
@@ -155,7 +155,7 @@ export default function Home() {
               <button
                 key={category.id}
                 onClick={() => setSelectedCategory(category.id)}
-                className={`flex items-center gap-2 px-6 py-2 rounded-full font-medium whitespace-nowrap transition-colors ${
+                className={`flex items-center justify-center gap-2 px-4 py-2 rounded-full font-medium transition-colors text-sm ${
                   selectedCategory === category.id
                     ? 'bg-black text-white'
                     : 'bg-gray-800 text-white hover:bg-gray-700'
@@ -165,11 +165,11 @@ export default function Home() {
                   <img
                     src={category.iconUrl}
                     alt={category.name}
-                    className="w-5 h-5"
+                    className="w-4 h-4"
                     loading="lazy"
                   />
                 )}
-                {category.name}
+                <span className="truncate">{category.name}</span>
               </button>
             ))}
           </div>
