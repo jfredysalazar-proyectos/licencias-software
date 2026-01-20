@@ -342,7 +342,10 @@ export default function AdminProducts() {
                         )}
                       </div>
                     ) : (
-                      <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
+                      <label
+                        htmlFor="image"
+                        className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary transition-colors block"
+                      >
                         <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                         <p className="text-sm text-muted-foreground mb-2">
                           Haz clic para subir una imagen
@@ -350,7 +353,7 @@ export default function AdminProducts() {
                         <p className="text-xs text-muted-foreground">
                           PNG, JPG, WebP (máx. 5MB)
                         </p>
-                      </div>
+                      </label>
                     )}
                     <Input
                       id="image"
@@ -358,7 +361,7 @@ export default function AdminProducts() {
                       accept="image/*"
                       onChange={handleImageChange}
                       disabled={isUploading}
-                      className="cursor-pointer"
+                      className="hidden"
                     />
                   </div>
                 </div>
