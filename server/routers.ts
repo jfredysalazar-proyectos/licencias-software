@@ -74,6 +74,19 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return await db.getProductSkus(input.productId);
       }),
+    related: publicProcedure
+      .input(z.object({ 
+        categoryId: z.number(),
+        currentProductId: z.number(),
+        limit: z.number().optional().default(8)
+      }))
+      .query(async ({ input }) => {
+        const products = await db.getProductsByCategory(input.categoryId);
+        // Filter out current product and limit results
+        return products
+          .filter(p => p.id !== input.currentProductId)
+          .slice(0, input.limit);
+      }),
   }),
 
   orders: router({

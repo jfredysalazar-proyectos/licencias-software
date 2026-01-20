@@ -10,6 +10,7 @@ import Header from "@/components/Header";
 import VariantSelector from "@/components/VariantSelector";
 import CartDrawer from "@/components/CartDrawer";
 import Footer from "@/components/Footer";
+import RelatedProductsCarousel from "@/components/RelatedProductsCarousel";
 import { toast } from "sonner";
 
 export default function ProductDetail() {
@@ -22,6 +23,17 @@ export default function ProductDetail() {
   const { data: product, isLoading } = trpc.products.getBySlug.useQuery({
     slug: params?.slug || "",
   });
+
+  const { data: relatedProducts } = trpc.products.related.useQuery(
+    {
+      categoryId: product?.categoryId || 0,
+      currentProductId: product?.id || 0,
+      limit: 8,
+    },
+    {
+      enabled: !!product,
+    }
+  );
 
   const { addToCart, cart } = useCart();
 
@@ -233,6 +245,11 @@ export default function ProductDetail() {
           </div>
         </div>
       </main>
+
+      {/* Related Products Carousel */}
+      {relatedProducts && relatedProducts.length > 0 && (
+        <RelatedProductsCarousel products={relatedProducts} />
+      )}
 
       <Footer />
 
