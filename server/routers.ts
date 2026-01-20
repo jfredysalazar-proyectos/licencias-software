@@ -69,6 +69,11 @@ export const appRouter = router({
         );
         return variantsWithOptions;
       }),
+    skus: publicProcedure
+      .input(z.object({ productId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getProductSkus(input.productId);
+      }),
   }),
 
   orders: router({

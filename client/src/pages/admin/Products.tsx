@@ -534,6 +534,14 @@ export default function AdminProducts() {
                         Variantes
                       </Button>
                       <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => window.location.href = `/admin/products/${product.id}/pricing`}
+                        title="Configurar precios"
+                      >
+                        Precios
+                      </Button>
+                      <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleEdit(product)}

@@ -18,10 +18,12 @@ interface Variant {
 interface VariantSelectorProps {
   productId: number;
   onVariantsChange: (variants: SelectedVariant[]) => void;
+  onPriceChange?: (price: number) => void;
 }
 
-export default function VariantSelector({ productId, onVariantsChange }: VariantSelectorProps) {
+export default function VariantSelector({ productId, onVariantsChange, onPriceChange }: VariantSelectorProps) {
   const { data: variants, isLoading } = trpc.products.variants.useQuery({ productId });
+  const { data: skus } = trpc.products.skus.useQuery({ productId });
   const [selectedOptions, setSelectedOptions] = useState<{ [variantId: number]: number }>({});
 
   // Auto-select first option for each variant
@@ -37,7 +39,7 @@ export default function VariantSelector({ productId, onVariantsChange }: Variant
     }
   }, [variants]);
 
-  // Notify parent of selection changes
+  // Notify parent of selection changes and calculate price
   useEffect(() => {
     if (variants && Object.keys(selectedOptions).length > 0) {
       const selectedVariants: SelectedVariant[] = variants
@@ -53,8 +55,25 @@ export default function VariantSelector({ productId, onVariantsChange }: Variant
           };
         });
       onVariantsChange(selectedVariants);
+      
+      // Find matching SKU and notify price change
+      if (skus && skus.length > 0 && onPriceChange) {
+        const combination = Object.keys(selectedOptions).reduce((acc, variantId) => {
+          acc[variantId] = selectedOptions[parseInt(variantId)];
+          return acc;
+        }, {} as { [key: string]: number });
+        
+        const matchingSku = skus.find((sku) => {
+          const skuCombination = JSON.parse(sku.variantCombination);
+          return JSON.stringify(skuCombination) === JSON.stringify(combination);
+        });
+        
+        if (matchingSku) {
+          onPriceChange(matchingSku.price);
+        }
+      }
     }
-  }, [selectedOptions, variants, onVariantsChange]);
+  }, [selectedOptions, variants, skus, onVariantsChange, onPriceChange]);
 
   const handleOptionChange = (variantId: number, optionId: string) => {
     setSelectedOptions((prev) => ({

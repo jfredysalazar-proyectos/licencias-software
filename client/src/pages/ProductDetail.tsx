@@ -17,6 +17,7 @@ export default function ProductDetail() {
   const [, setLocation] = useLocation();
   const [cartOpen, setCartOpen] = useState(false);
   const [selectedVariants, setSelectedVariants] = useState<SelectedVariant[]>([]);
+  const [currentPrice, setCurrentPrice] = useState<number | null>(null);
 
   const { data: product, isLoading } = trpc.products.getBySlug.useQuery({
     slug: params?.slug || "",
@@ -26,7 +27,11 @@ export default function ProductDetail() {
 
   const handleAddToCart = () => {
     if (product) {
-      addToCart(product, selectedVariants.length > 0 ? selectedVariants : undefined);
+      addToCart(
+        product, 
+        selectedVariants.length > 0 ? selectedVariants : undefined,
+        currentPrice || undefined
+      );
       const variantText = selectedVariants.length > 0 
         ? ` (${selectedVariants.map(v => v.optionValue).join(", ")})`
         : "";
@@ -165,16 +170,22 @@ export default function ProductDetail() {
               <div className="border-t border-b py-6">
                 <div className="flex items-baseline gap-2">
                   <span className="text-4xl font-bold text-primary">
-                    ${product.basePrice.toLocaleString("es-CO")}
+                    ${(currentPrice || product.basePrice).toLocaleString("es-CO")}
                   </span>
                   <span className="text-muted-foreground">COP</span>
                 </div>
+                {currentPrice && currentPrice !== product.basePrice && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Precio base: ${product.basePrice.toLocaleString("es-CO")} COP
+                  </p>
+                )}
               </div>
 
               {/* Variant Selector */}
               <VariantSelector
                 productId={product.id}
                 onVariantsChange={setSelectedVariants}
+                onPriceChange={setCurrentPrice}
               />
 
               <div>

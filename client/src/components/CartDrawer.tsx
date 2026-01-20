@@ -83,7 +83,7 @@ export default function CartDrawer({ open, onClose, onCheckout }: CartDrawerProp
                         </div>
                       )}
                       <p className="text-sm text-primary font-semibold mb-2">
-                        ${item.product.basePrice.toLocaleString("es-CO")}
+                        ${(item.variantPrice || item.product.basePrice).toLocaleString("es-CO")}
                       </p>
 
                       {/* Quantity Controls */}

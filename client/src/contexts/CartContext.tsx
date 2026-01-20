@@ -12,11 +12,12 @@ export interface CartItem {
   product: Product;
   quantity: number;
   selectedVariants?: SelectedVariant[];
+  variantPrice?: number; // Precio específico de la variante
 }
 
 interface CartContextType {
   cart: CartItem[];
-  addToCart: (product: Product, selectedVariants?: SelectedVariant[]) => void;
+  addToCart: (product: Product, selectedVariants?: SelectedVariant[], variantPrice?: number) => void;
   removeFromCart: (productId: number, variantKey?: string) => void;
   updateQuantity: (productId: number, quantity: number, variantKey?: string) => void;
   clearCart: () => void;
@@ -41,7 +42,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     return variants.map(v => `${v.variantId}:${v.optionId}`).sort().join("|");
   };
 
-  const addToCart = (product: Product, selectedVariants?: SelectedVariant[]) => {
+  const addToCart = (product: Product, selectedVariants?: SelectedVariant[], variantPrice?: number) => {
     setCart((prevCart) => {
       const variantKey = getVariantKey(selectedVariants);
       const existingItem = prevCart.find(
@@ -57,7 +58,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             : item
         );
       }
-      return [...prevCart, { product, quantity: 1, selectedVariants }];
+      return [...prevCart, { product, quantity: 1, selectedVariants, variantPrice }];
     });
   };
 
@@ -90,7 +91,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   const getCartTotal = () => {
-    return cart.reduce((total, item) => total + item.product.basePrice * item.quantity, 0);
+    return cart.reduce((total, item) => {
+      const price = item.variantPrice || item.product.basePrice;
+      return total + price * item.quantity;
+    }, 0);
   };
 
   const getCartCount = () => {
