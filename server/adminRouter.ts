@@ -292,10 +292,24 @@ export const adminRouter = router({
         // Generate unique filename
         const fileExtension = "webp";
         const uniqueId = nanoid(10);
-        const fileName = `products/${uniqueId}.${fileExtension}`;
+        const fileName = `${uniqueId}.${fileExtension}`;
+        const filePath = `uploads/products/${fileName}`;
 
-        // Upload to S3
-        const { url } = await storagePut(fileName, optimizedBuffer, "image/webp");
+        // Save to local filesystem
+        const fs = await import("fs/promises");
+        const path = await import("path");
+        const publicDir = path.join(process.cwd(), "dist", "public");
+        const uploadsDir = path.join(publicDir, "uploads", "products");
+        
+        // Ensure directory exists
+        await fs.mkdir(uploadsDir, { recursive: true });
+        
+        // Write file
+        const fullPath = path.join(uploadsDir, fileName);
+        await fs.writeFile(fullPath, optimizedBuffer);
+
+        // Return public URL
+        const url = `/${filePath}`;
 
         return {
           success: true,
