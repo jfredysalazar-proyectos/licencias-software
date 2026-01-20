@@ -15,6 +15,9 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
+    // If product has variants, redirect to product page
+    // Otherwise, add directly to cart
+    // For now, we'll add directly and handle variants on product detail page
     addToCart(product);
     toast.success(`${product.name} agregado al carrito`);
   };

@@ -1,16 +1,24 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import type { Product } from "../../../drizzle/schema";
 
+export interface SelectedVariant {
+  variantId: number;
+  variantName: string;
+  optionId: number;
+  optionValue: string;
+}
+
 export interface CartItem {
   product: Product;
   quantity: number;
+  selectedVariants?: SelectedVariant[];
 }
 
 interface CartContextType {
   cart: CartItem[];
-  addToCart: (product: Product) => void;
-  removeFromCart: (productId: number) => void;
-  updateQuantity: (productId: number, quantity: number) => void;
+  addToCart: (product: Product, selectedVariants?: SelectedVariant[]) => void;
+  removeFromCart: (productId: number, variantKey?: string) => void;
+  updateQuantity: (productId: number, quantity: number, variantKey?: string) => void;
   clearCart: () => void;
   getCartTotal: () => number;
   getCartCount: () => number;
@@ -28,33 +36,52 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("cart", JSON.stringify(cart));
   }, [cart]);
 
-  const addToCart = (product: Product) => {
+  const getVariantKey = (variants?: SelectedVariant[]) => {
+    if (!variants || variants.length === 0) return "";
+    return variants.map(v => `${v.variantId}:${v.optionId}`).sort().join("|");
+  };
+
+  const addToCart = (product: Product, selectedVariants?: SelectedVariant[]) => {
     setCart((prevCart) => {
-      const existingItem = prevCart.find((item) => item.product.id === product.id);
+      const variantKey = getVariantKey(selectedVariants);
+      const existingItem = prevCart.find(
+        (item) => 
+          item.product.id === product.id && 
+          getVariantKey(item.selectedVariants) === variantKey
+      );
+      
       if (existingItem) {
         return prevCart.map((item) =>
-          item.product.id === product.id
+          item.product.id === product.id && getVariantKey(item.selectedVariants) === variantKey
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
       }
-      return [...prevCart, { product, quantity: 1 }];
+      return [...prevCart, { product, quantity: 1, selectedVariants }];
     });
   };
 
-  const removeFromCart = (productId: number) => {
-    setCart((prevCart) => prevCart.filter((item) => item.product.id !== productId));
+  const removeFromCart = (productId: number, variantKey?: string) => {
+    setCart((prevCart) => 
+      prevCart.filter((item) => {
+        if (item.product.id !== productId) return true;
+        if (variantKey === undefined) return false;
+        return getVariantKey(item.selectedVariants) !== variantKey;
+      })
+    );
   };
 
-  const updateQuantity = (productId: number, quantity: number) => {
+  const updateQuantity = (productId: number, quantity: number, variantKey?: string) => {
     if (quantity <= 0) {
-      removeFromCart(productId);
+      removeFromCart(productId, variantKey);
       return;
     }
     setCart((prevCart) =>
-      prevCart.map((item) =>
-        item.product.id === productId ? { ...item, quantity } : item
-      )
+      prevCart.map((item) => {
+        if (item.product.id !== productId) return item;
+        if (variantKey !== undefined && getVariantKey(item.selectedVariants) !== variantKey) return item;
+        return { ...item, quantity };
+      })
     );
   };
 

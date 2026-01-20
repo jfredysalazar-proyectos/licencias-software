@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { useCart } from "@/contexts/CartContext";
+import type { SelectedVariant } from "@/contexts/CartContext";
 import Header from "@/components/Header";
+import VariantSelector from "@/components/VariantSelector";
 import CartDrawer from "@/components/CartDrawer";
 import Footer from "@/components/Footer";
 import { toast } from "sonner";
@@ -14,6 +16,7 @@ export default function ProductDetail() {
   const [, params] = useRoute("/producto/:slug");
   const [, setLocation] = useLocation();
   const [cartOpen, setCartOpen] = useState(false);
+  const [selectedVariants, setSelectedVariants] = useState<SelectedVariant[]>([]);
 
   const { data: product, isLoading } = trpc.products.getBySlug.useQuery({
     slug: params?.slug || "",
@@ -23,8 +26,11 @@ export default function ProductDetail() {
 
   const handleAddToCart = () => {
     if (product) {
-      addToCart(product);
-      toast.success(`${product.name} agregado al carrito`);
+      addToCart(product, selectedVariants.length > 0 ? selectedVariants : undefined);
+      const variantText = selectedVariants.length > 0 
+        ? ` (${selectedVariants.map(v => v.optionValue).join(", ")})`
+        : "";
+      toast.success(`${product.name}${variantText} agregado al carrito`);
     }
   };
 
@@ -34,6 +40,14 @@ export default function ProductDetail() {
 
     cart.forEach((item, index) => {
       message += `${index + 1}. ${item.product.name}\n`;
+      
+      // Add variants if present
+      if (item.selectedVariants && item.selectedVariants.length > 0) {
+        item.selectedVariants.forEach((variant) => {
+          message += `   ${variant.variantName}: ${variant.optionValue}\n`;
+        });
+      }
+      
       message += `   Cantidad: ${item.quantity}\n`;
       message += `   Precio: $${item.product.basePrice.toLocaleString("es-CO")} COP\n\n`;
     });
@@ -156,6 +170,12 @@ export default function ProductDetail() {
                   <span className="text-muted-foreground">COP</span>
                 </div>
               </div>
+
+              {/* Variant Selector */}
+              <VariantSelector
+                productId={product.id}
+                onVariantsChange={setSelectedVariants}
+              />
 
               <div>
                 <h2 className="text-xl font-semibold mb-4">Descripción</h2>

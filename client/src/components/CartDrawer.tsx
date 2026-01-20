@@ -46,9 +46,9 @@ export default function CartDrawer({ open, onClose, onCheckout }: CartDrawerProp
           <div className="flex flex-col h-[calc(100vh-8rem)]">
             <ScrollArea className="flex-1 -mx-6 px-6 my-6">
               <div className="space-y-4">
-                {cart.map((item) => (
+                {cart.map((item, index) => (
                   <div
-                    key={item.product.id}
+                    key={`${item.product.id}-${index}`}
                     className="flex gap-4 p-4 rounded-lg border bg-card"
                   >
                     {/* Product Image */}
@@ -73,6 +73,15 @@ export default function CartDrawer({ open, onClose, onCheckout }: CartDrawerProp
                       <h4 className="font-semibold text-sm line-clamp-1 mb-1">
                         {item.product.name}
                       </h4>
+                      {item.selectedVariants && item.selectedVariants.length > 0 && (
+                        <div className="text-xs text-muted-foreground mb-1 space-y-0.5">
+                          {item.selectedVariants.map((variant) => (
+                            <div key={variant.variantId}>
+                              <span className="font-medium">{variant.variantName}:</span> {variant.optionValue}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                       <p className="text-sm text-primary font-semibold mb-2">
                         ${item.product.basePrice.toLocaleString("es-CO")}
                       </p>

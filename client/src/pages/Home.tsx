@@ -48,6 +48,14 @@ export default function Home() {
 
     cart.forEach((item, index) => {
       message += `${index + 1}. ${item.product.name}\n`;
+      
+      // Add variants if present
+      if (item.selectedVariants && item.selectedVariants.length > 0) {
+        item.selectedVariants.forEach((variant) => {
+          message += `   ${variant.variantName}: ${variant.optionValue}\n`;
+        });
+      }
+      
       message += `   Cantidad: ${item.quantity}\n`;
       message += `   Precio: $${item.product.basePrice.toLocaleString("es-CO")} COP\n\n`;
     });

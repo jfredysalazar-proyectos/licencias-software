@@ -56,6 +56,19 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return await db.searchProducts(input.query);
       }),
+    variants: publicProcedure
+      .input(z.object({ productId: z.number() }))
+      .query(async ({ input }) => {
+        const variants = await db.getProductVariants(input.productId);
+        // Get options for each variant
+        const variantsWithOptions = await Promise.all(
+          variants.map(async (variant) => {
+            const options = await db.getVariantOptions(variant.id);
+            return { ...variant, options };
+          })
+        );
+        return variantsWithOptions;
+      }),
   }),
 
   orders: router({
