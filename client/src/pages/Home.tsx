@@ -8,6 +8,7 @@ import HeroSection from "@/components/HeroSection";
 import ProductCard from "@/components/ProductCard";
 import CartDrawer from "@/components/CartDrawer";
 import Footer from "@/components/Footer";
+import PurchaseNotification from "@/components/PurchaseNotification";
 
 import WhyChooseUs from "@/components/WhyChooseUs";
 import { useCart } from "@/contexts/CartContext";
@@ -305,6 +306,9 @@ export default function Home() {
         onClose={() => setCartOpen(false)}
         onCheckout={handleWhatsAppCheckout}
       />
+
+      {/* Purchase Notifications */}
+      <PurchaseNotification />
     </div>
   );
 }

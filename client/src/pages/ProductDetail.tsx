@@ -12,6 +12,7 @@ import CartDrawer from "@/components/CartDrawer";
 import Footer from "@/components/Footer";
 import RelatedProductsCarousel from "@/components/RelatedProductsCarousel";
 import SocialProof from "@/components/SocialProof";
+import PurchaseNotification from "@/components/PurchaseNotification";
 import { toast } from "sonner";
 
 export default function ProductDetail() {
@@ -262,6 +263,9 @@ export default function ProductDetail() {
         onClose={() => setCartOpen(false)}
         onCheckout={handleWhatsAppCheckout}
       />
+
+      {/* Purchase Notifications */}
+      <PurchaseNotification />
     </div>
   );
 }
