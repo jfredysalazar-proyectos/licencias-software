@@ -99,7 +99,7 @@ export default function PurchaseNotification() {
           </p>
           <div className="flex items-center gap-1 mt-1 text-xs text-gray-500">
             <MapPin className="h-3 w-3" />
-            <span>{notification.city}</span>
+            <span>Desde {notification.city}</span>
             <span className="mx-1">•</span>
             <span className="text-green-600 font-medium">Hoy</span>
           </div>
