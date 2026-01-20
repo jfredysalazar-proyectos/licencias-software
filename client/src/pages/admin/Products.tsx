@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +23,7 @@ import {
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Upload, X } from "lucide-react";
+import ProductVariantsManager, { Variant } from "@/components/ProductVariantsManager";
 type Product = {
   id: number;
   name: string;
@@ -47,6 +49,7 @@ export default function AdminProducts() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [variants, setVariants] = useState<Variant[]>([]);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -122,9 +125,10 @@ export default function AdminProducts() {
     });
     setEditingProduct(null);
     setImagePreview(null);
+    setVariants([]);
   };
 
-  const handleEdit = (product: Product) => {
+  const handleEdit = async (product: Product) => {
     setEditingProduct(product);
     setFormData({
       name: product.name,
@@ -146,6 +150,21 @@ export default function AdminProducts() {
       setImagePreview(null);
       setImageError(false);
     }
+    
+    // Load variants for this product
+    try {
+      const productVariants = await utils.admin.variants.list.fetch({ productId: product.id });
+      setVariants(productVariants.map(v => ({
+        id: v.id,
+        name: v.name,
+        position: v.position,
+        options: v.options || [],
+      })));
+    } catch (error) {
+      console.error("Error loading variants:", error);
+      setVariants([]);
+    }
+    
     setDialogOpen(true);
   };
 
@@ -192,7 +211,7 @@ export default function AdminProducts() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     const data = {
@@ -213,6 +232,9 @@ export default function AdminProducts() {
     } else {
       createMutation.mutate(data);
     }
+    
+    // Note: Variants will be saved separately after product is created
+    // For now, we'll implement a simpler flow
   };
 
   const handleDelete = (id: number) => {
@@ -430,6 +452,13 @@ export default function AdminProducts() {
                   />
                 </div>
 
+                {/* Product Variants */}
+                <ProductVariantsManager
+                  productId={editingProduct?.id}
+                  variants={variants}
+                  onChange={setVariants}
+                />
+
                 <div className="flex justify-end gap-2">
                   <Button
                     type="button"
@@ -496,6 +525,14 @@ export default function AdminProducts() {
                   </td>
                   <td className="p-4">
                     <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => window.location.href = `/admin/products/${product.id}/variants`}
+                        title="Gestionar variantes"
+                      >
+                        Variantes
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"

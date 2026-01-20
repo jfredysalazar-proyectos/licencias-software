@@ -1,6 +1,6 @@
 import { eq, like, and, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, categories, Category, InsertCategory, products, Product, InsertProduct, orders, Order, InsertOrder, admins, Admin, InsertAdmin, settings, Setting, InsertSetting, customers, Customer, InsertCustomer } from "../drizzle/schema";
+import { InsertUser, users, categories, Category, InsertCategory, products, Product, InsertProduct, orders, Order, InsertOrder, admins, Admin, InsertAdmin, settings, Setting, InsertSetting, customers, Customer, InsertCustomer, productVariants, ProductVariant, InsertProductVariant, variantOptions, VariantOption, InsertVariantOption, productSkus, ProductSku, InsertProductSku } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -126,6 +126,13 @@ export async function getProductBySlug(slug: string): Promise<Product | undefine
   const db = await getDb();
   if (!db) return undefined;
   const result = await db.select().from(products).where(eq(products.slug, slug)).limit(1);
+  return result[0];
+}
+
+export async function getProductById(id: number): Promise<Product | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(products).where(eq(products.id, id)).limit(1);
   return result[0];
 }
 
@@ -304,4 +311,108 @@ export async function getCustomerOrders(customerId: number): Promise<Order[]> {
   if (!db) return [];
   const result = await db.select().from(orders).where(eq(orders.customerId, customerId)).orderBy(desc(orders.createdAt));
   return result;
+}
+
+// ==================== PRODUCT VARIANTS ====================
+
+export async function getProductVariants(productId: number): Promise<ProductVariant[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(productVariants).where(eq(productVariants.productId, productId)).orderBy(productVariants.position);
+}
+
+export async function createProductVariant(variant: InsertProductVariant): Promise<ProductVariant> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(productVariants).values(variant);
+  return { ...variant, id: Number(result[0].insertId) } as ProductVariant;
+}
+
+export async function updateProductVariant(id: number, data: Partial<InsertProductVariant>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(productVariants).set(data).where(eq(productVariants.id, id));
+}
+
+export async function deleteProductVariant(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  // Delete associated options first
+  await db.delete(variantOptions).where(eq(variantOptions.variantId, id));
+  // Delete the variant
+  await db.delete(productVariants).where(eq(productVariants.id, id));
+}
+
+// ==================== VARIANT OPTIONS ====================
+
+export async function getVariantOptions(variantId: number): Promise<VariantOption[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(variantOptions).where(eq(variantOptions.variantId, variantId)).orderBy(variantOptions.position);
+}
+
+export async function createVariantOption(option: InsertVariantOption): Promise<VariantOption> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(variantOptions).values(option);
+  return { ...option, id: Number(result[0].insertId) } as VariantOption;
+}
+
+export async function updateVariantOption(id: number, data: Partial<InsertVariantOption>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(variantOptions).set(data).where(eq(variantOptions.id, id));
+}
+
+export async function deleteVariantOption(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(variantOptions).where(eq(variantOptions.id, id));
+}
+
+// ==================== PRODUCT SKUS ====================
+
+export async function getProductSkus(productId: number): Promise<ProductSku[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(productSkus).where(eq(productSkus.productId, productId));
+}
+
+export async function getProductSkuById(id: number): Promise<ProductSku | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(productSkus).where(eq(productSkus.id, id));
+  return result[0];
+}
+
+export async function getProductSkuBySku(sku: string): Promise<ProductSku | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(productSkus).where(eq(productSkus.sku, sku));
+  return result[0];
+}
+
+export async function createProductSku(sku: InsertProductSku): Promise<ProductSku> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(productSkus).values(sku);
+  return { ...sku, id: Number(result[0].insertId) } as ProductSku;
+}
+
+export async function updateProductSku(id: number, data: Partial<InsertProductSku>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(productSkus).set(data).where(eq(productSkus.id, id));
+}
+
+export async function deleteProductSku(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(productSkus).where(eq(productSkus.id, id));
+}
+
+export async function deleteProductSkusByProductId(productId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(productSkus).where(eq(productSkus.productId, productId));
 }

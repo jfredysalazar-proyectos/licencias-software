@@ -146,6 +146,12 @@ export const adminRouter = router({
       return await db.getAllProducts();
     }),
 
+    getById: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getProductById(input.id);
+      }),
+
     create: adminProcedure
       .input(
         z.object({
@@ -340,6 +346,162 @@ export const adminRouter = router({
       )
       .mutation(async ({ input }) => {
         await db.upsertSetting(input.key, input.value, input.description);
+        return { success: true };
+      }),
+  }),
+
+  // ==================== PRODUCT VARIANTS ====================
+  variants: router({
+    list: adminProcedure
+      .input(z.object({ productId: z.number() }))
+      .query(async ({ input }) => {
+        const variants = await db.getProductVariants(input.productId);
+        // Get options for each variant
+        const variantsWithOptions = await Promise.all(
+          variants.map(async (variant) => {
+            const options = await db.getVariantOptions(variant.id);
+            return { ...variant, options };
+          })
+        );
+        return variantsWithOptions;
+      }),
+
+    create: adminProcedure
+      .input(
+        z.object({
+          productId: z.number(),
+          name: z.string().min(1),
+          position: z.number().default(0),
+          options: z.array(z.string()).min(1), // Array of option values
+        })
+      )
+      .mutation(async ({ input }) => {
+        // Create variant
+        const variant = await db.createProductVariant({
+          productId: input.productId,
+          name: input.name,
+          position: input.position,
+        });
+
+        // Create options
+        await Promise.all(
+          input.options.map((value, index) =>
+            db.createVariantOption({
+              variantId: variant.id,
+              value,
+              position: index,
+            })
+          )
+        );
+
+        return { success: true, variant };
+      }),
+
+    update: adminProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          name: z.string().min(1).optional(),
+          position: z.number().optional(),
+          options: z.array(z.object({
+            id: z.number().optional(),
+            value: z.string(),
+            position: z.number(),
+          })).optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const { id, options, ...variantData } = input;
+        
+        // Update variant
+        if (Object.keys(variantData).length > 0) {
+          await db.updateProductVariant(id, variantData);
+        }
+
+        // Update options if provided
+        if (options) {
+          // Get existing options
+          const existingOptions = await db.getVariantOptions(id);
+          const existingIds = existingOptions.map(o => o.id);
+          const inputIds = options.filter(o => o.id).map(o => o.id!);
+
+          // Delete removed options
+          const toDelete = existingIds.filter(id => !inputIds.includes(id));
+          await Promise.all(toDelete.map(id => db.deleteVariantOption(id)));
+
+          // Update or create options
+          await Promise.all(
+            options.map(async (option) => {
+              if (option.id) {
+                await db.updateVariantOption(option.id, {
+                  value: option.value,
+                  position: option.position,
+                });
+              } else {
+                await db.createVariantOption({
+                  variantId: id,
+                  value: option.value,
+                  position: option.position,
+                });
+              }
+            })
+          );
+        }
+
+        return { success: true };
+      }),
+
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteProductVariant(input.id);
+        return { success: true };
+      }),
+  }),
+
+  // ==================== PRODUCT SKUS ====================
+  skus: router({
+    list: adminProcedure
+      .input(z.object({ productId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getProductSkus(input.productId);
+      }),
+
+    create: adminProcedure
+      .input(
+        z.object({
+          productId: z.number(),
+          sku: z.string().min(1),
+          variantCombination: z.string(), // JSON string
+          price: z.number().min(0),
+          inStock: z.number().default(1),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const sku = await db.createProductSku(input);
+        return { success: true, sku };
+      }),
+
+    update: adminProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          sku: z.string().min(1).optional(),
+          variantCombination: z.string().optional(),
+          price: z.number().min(0).optional(),
+          inStock: z.number().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updateProductSku(id, data);
+        return { success: true };
+      }),
+
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteProductSku(input.id);
         return { success: true };
       }),
   }),

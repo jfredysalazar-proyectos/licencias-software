@@ -81,6 +81,54 @@ export type Product = typeof products.$inferSelect;
 export type InsertProduct = typeof products.$inferInsert;
 
 /**
+ * Product variants table - defines variant types for products
+ * Example: "Tiempo de Licencia", "Versión", "Tipo de Cuenta"
+ */
+export const productVariants = mysqlTable("product_variants", {
+  id: int("id").autoincrement().primaryKey(),
+  productId: int("productId").notNull(),
+  name: varchar("name", { length: 100 }).notNull(), // e.g., "Tiempo de Licencia"
+  position: int("position").default(0).notNull(), // Order of display
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ProductVariant = typeof productVariants.$inferSelect;
+export type InsertProductVariant = typeof productVariants.$inferInsert;
+
+/**
+ * Variant options table - defines available options for each variant
+ * Example: "1 mes", "3 meses", "6 meses" for "Tiempo de Licencia"
+ */
+export const variantOptions = mysqlTable("variant_options", {
+  id: int("id").autoincrement().primaryKey(),
+  variantId: int("variantId").notNull(),
+  value: varchar("value", { length: 100 }).notNull(), // e.g., "1 mes"
+  position: int("position").default(0).notNull(), // Order of display
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type VariantOption = typeof variantOptions.$inferSelect;
+export type InsertVariantOption = typeof variantOptions.$inferInsert;
+
+/**
+ * Product SKUs table - defines specific combinations of variants with pricing
+ * Each SKU represents a unique combination of variant options
+ */
+export const productSkus = mysqlTable("product_skus", {
+  id: int("id").autoincrement().primaryKey(),
+  productId: int("productId").notNull(),
+  sku: varchar("sku", { length: 100 }).notNull().unique(), // Unique identifier
+  variantCombination: text("variantCombination").notNull(), // JSON: {"variantId": "optionId"}
+  price: int("price").notNull(), // Price in COP for this specific combination
+  inStock: int("inStock").default(1).notNull(), // 0 or 1 for boolean
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ProductSku = typeof productSkus.$inferSelect;
+export type InsertProductSku = typeof productSkus.$inferInsert;
+
+/**
  * Orders table for tracking purchases
  */
 export const orders = mysqlTable("orders", {
