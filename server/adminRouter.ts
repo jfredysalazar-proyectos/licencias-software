@@ -504,4 +504,75 @@ export const adminRouter = router({
         return { success: true };
       }),
   }),
+
+  // Sold Licenses Management
+  soldLicenses: router({
+    list: adminProcedure.query(async () => {
+      return db.getAllSoldLicenses();
+    }),
+
+    getById: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return db.getSoldLicenseById(input.id);
+      }),
+
+    getExpiringSoon: adminProcedure
+      .input(z.object({ days: z.number().default(30) }))
+      .query(async ({ input }) => {
+        return db.getExpiringSoonLicenses(input.days);
+      }),
+
+    create: adminProcedure
+      .input(
+        z.object({
+          customerName: z.string(),
+          customerEmail: z.string().email(),
+          customerWhatsapp: z.string(),
+          productId: z.number(),
+          productName: z.string(),
+          licenseCode: z.string(),
+          expirationDate: z.string(), // YYYY-MM-DD format
+          notes: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const licenseData = {
+          ...input,
+          expirationDate: new Date(input.expirationDate),
+        };
+        return db.createSoldLicense(licenseData);
+      }),
+
+    update: adminProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          customerName: z.string().optional(),
+          customerEmail: z.string().email().optional(),
+          customerWhatsapp: z.string().optional(),
+          productId: z.number().optional(),
+          productName: z.string().optional(),
+          licenseCode: z.string().optional(),
+          expirationDate: z.string().optional(),
+          notes: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        const updateData = {
+          ...data,
+          expirationDate: data.expirationDate ? new Date(data.expirationDate) : undefined,
+        };
+        await db.updateSoldLicense(id, updateData);
+        return { success: true };
+      }),
+
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteSoldLicense(input.id);
+        return { success: true };
+      }),
+  }),
 });

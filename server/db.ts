@@ -1,6 +1,6 @@
 import { eq, like, and, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, categories, Category, InsertCategory, products, Product, InsertProduct, orders, Order, InsertOrder, admins, Admin, InsertAdmin, settings, Setting, InsertSetting, customers, Customer, InsertCustomer, productVariants, ProductVariant, InsertProductVariant, variantOptions, VariantOption, InsertVariantOption, productSkus, ProductSku, InsertProductSku } from "../drizzle/schema";
+import { InsertUser, users, categories, Category, InsertCategory, products, Product, InsertProduct, orders, Order, InsertOrder, admins, Admin, InsertAdmin, settings, Setting, InsertSetting, customers, Customer, InsertCustomer, productVariants, ProductVariant, InsertProductVariant, variantOptions, VariantOption, InsertVariantOption, productSkus, ProductSku, InsertProductSku, soldLicenses, SoldLicense, InsertSoldLicense } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -415,4 +415,69 @@ export async function deleteProductSkusByProductId(productId: number): Promise<v
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.delete(productSkus).where(eq(productSkus.productId, productId));
+}
+
+// ============================================================================
+// Sold Licenses Functions
+// ============================================================================
+
+export async function createSoldLicense(license: InsertSoldLicense): Promise<SoldLicense> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(soldLicenses).values(license);
+  const insertedId = Number(result[0].insertId);
+  
+  const created = await db.select().from(soldLicenses).where(eq(soldLicenses.id, insertedId));
+  if (!created || created.length === 0) {
+    throw new Error("Failed to retrieve created sold license");
+  }
+  return created[0];
+}
+
+export async function getAllSoldLicenses(): Promise<SoldLicense[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Order by expiration date ascending (soonest to expire first)
+  return db.select().from(soldLicenses).orderBy(soldLicenses.expirationDate);
+}
+
+export async function getSoldLicenseById(id: number): Promise<SoldLicense | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.select().from(soldLicenses).where(eq(soldLicenses.id, id));
+  return result[0] || null;
+}
+
+export async function updateSoldLicense(id: number, updates: Partial<InsertSoldLicense>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(soldLicenses).set(updates).where(eq(soldLicenses.id, id));
+}
+
+export async function deleteSoldLicense(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.delete(soldLicenses).where(eq(soldLicenses.id, id));
+}
+
+export async function getExpiringSoonLicenses(daysThreshold: number = 30): Promise<SoldLicense[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Get licenses expiring within the next X days
+  const today = new Date();
+  const futureDate = new Date();
+  futureDate.setDate(today.getDate() + daysThreshold);
+
+  const allLicenses = await getAllSoldLicenses();
+  
+  return allLicenses.filter(license => {
+    const expirationDate = new Date(license.expirationDate);
+    return expirationDate >= today && expirationDate <= futureDate;
+  });
 }

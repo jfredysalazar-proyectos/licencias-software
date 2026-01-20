@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { date, int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -179,3 +179,23 @@ export const settings = mysqlTable("settings", {
 
 export type Setting = typeof settings.$inferSelect;
 export type InsertSetting = typeof settings.$inferInsert;
+
+/**
+ * Sold licenses table for tracking license sales and expiration
+ */
+export const soldLicenses = mysqlTable("sold_licenses", {
+  id: int("id").autoincrement().primaryKey(),
+  customerName: varchar("customerName", { length: 200 }).notNull(),
+  customerEmail: varchar("customerEmail", { length: 320 }).notNull(),
+  customerWhatsapp: varchar("customerWhatsapp", { length: 50 }).notNull(),
+  productId: int("productId").notNull(),
+  productName: varchar("productName", { length: 200 }).notNull(), // Denormalized for easy display
+  licenseCode: varchar("licenseCode", { length: 500 }).notNull(),
+  expirationDate: date("expirationDate").notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SoldLicense = typeof soldLicenses.$inferSelect;
+export type InsertSoldLicense = typeof soldLicenses.$inferInsert;

@@ -9,7 +9,8 @@ import {
   Users, 
   ShoppingCart, 
   Settings, 
-  LogOut 
+  LogOut,
+  Key
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -52,6 +53,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { icon: Package, label: "Productos", path: "/admin/products" },
     { icon: FolderTree, label: "Categorías", path: "/admin/categories" },
     { icon: ShoppingCart, label: "Pedidos", path: "/admin/orders" },
+    { icon: Key, label: "Licencias Vendidas", path: "/admin/sold-licenses" },
     { icon: Users, label: "Clientes", path: "/admin/customers" },
     { icon: Settings, label: "Configuración", path: "/admin/settings" },
   ];
