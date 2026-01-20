@@ -47,18 +47,16 @@ export default function ProductVariants() {
     setIsSaving(true);
     try {
       // Delete existing variants
-      if (existingVariants) {
-        await Promise.all(
-          existingVariants.map((v) =>
-            utils.client.mutation("admin.variants.delete", { id: v.id })
-          )
-        );
+      if (existingVariants && existingVariants.length > 0) {
+        for (const v of existingVariants) {
+          await utils.client.admin.variants.delete.mutate({ id: v.id });
+        }
       }
 
       // Create new variants
       for (const variant of variants) {
         if (variant.options.length > 0) {
-          await utils.client.mutation("admin.variants.create", {
+          await utils.client.admin.variants.create.mutate({
             productId: parseInt(productId),
             name: variant.name,
             position: variant.position,
