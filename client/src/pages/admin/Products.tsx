@@ -46,6 +46,7 @@ export default function AdminProducts() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -137,7 +138,14 @@ export default function AdminProducts() {
       inStock: product.inStock.toString(),
       features: product.features || "",
     });
-    setImagePreview(product.imageUrl);
+    // Set image preview with full URL if it's a relative path
+    if (product.imageUrl) {
+      setImagePreview(product.imageUrl);
+      setImageError(false);
+    } else {
+      setImagePreview(null);
+      setImageError(false);
+    }
     setDialogOpen(true);
   };
 
@@ -176,6 +184,12 @@ export default function AdminProducts() {
   const handleRemoveImage = () => {
     setImagePreview(null);
     setFormData({ ...formData, imageUrl: "" });
+    setImageError(false);
+    // Reset file input
+    const fileInput = document.getElementById("image") as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = "";
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -318,12 +332,13 @@ export default function AdminProducts() {
                 <div className="space-y-2">
                   <Label htmlFor="image">Imagen del Producto</Label>
                   <div className="flex flex-col gap-4">
-                    {imagePreview ? (
+                    {imagePreview && !imageError ? (
                       <div className="relative w-full max-w-xs">
                         <img
                           src={imagePreview}
                           alt="Preview"
                           className="w-full h-48 object-cover rounded-lg border border-border"
+                          onError={() => setImageError(true)}
                         />
                         <Button
                           type="button"
