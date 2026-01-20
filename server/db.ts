@@ -1,6 +1,6 @@
 import { eq, like, and, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, categories, Category, InsertCategory, products, Product, InsertProduct, orders, Order, InsertOrder, admins, Admin, InsertAdmin, settings, Setting, InsertSetting } from "../drizzle/schema";
+import { InsertUser, users, categories, Category, InsertCategory, products, Product, InsertProduct, orders, Order, InsertOrder, admins, Admin, InsertAdmin, settings, Setting, InsertSetting, customers, Customer, InsertCustomer } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -268,4 +268,40 @@ export async function getAllUsers(): Promise<typeof users.$inferSelect[]> {
   const db = await getDb();
   if (!db) return [];
   return await db.select().from(users).orderBy(desc(users.createdAt));
+}
+
+// ==================== CUSTOMER AUTHENTICATION ====================
+
+export async function createCustomer(customer: InsertCustomer): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(customers).values(customer);
+  return result[0].insertId;
+}
+
+export async function getCustomerByEmail(email: string): Promise<Customer | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(customers).where(eq(customers.email, email)).limit(1);
+  return result[0];
+}
+
+export async function getCustomerById(id: number): Promise<Customer | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(customers).where(eq(customers.id, id)).limit(1);
+  return result[0];
+}
+
+export async function updateCustomerLastLogin(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(customers).set({ lastLogin: new Date() }).where(eq(customers.id, id));
+}
+
+export async function getCustomerOrders(customerId: number): Promise<Order[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const result = await db.select().from(orders).where(eq(orders.customerId, customerId)).orderBy(desc(orders.createdAt));
+  return result;
 }

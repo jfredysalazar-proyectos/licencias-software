@@ -5,11 +5,13 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import * as db from "./db";
 import { adminRouter } from "./adminRouter";
+import { customerRouter } from "./customerRouter";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
   admin: adminRouter,
+  customer: customerRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
@@ -60,6 +62,7 @@ export const appRouter = router({
     create: publicProcedure
       .input(
         z.object({
+          customerId: z.number().optional(),
           customerName: z.string().optional(),
           customerEmail: z.string().email().optional(),
           customerPhone: z.string().optional(),
@@ -68,7 +71,12 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ input, ctx }) => {
+        // Calculate expiry date (30 days from now for completed orders)
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 30);
+        
         const orderId = await db.createOrder({
+          customerId: input.customerId,
           userId: ctx.user?.id,
           customerName: input.customerName,
           customerEmail: input.customerEmail,
@@ -76,6 +84,7 @@ export const appRouter = router({
           items: input.items,
           totalAmount: input.totalAmount,
           status: "pending",
+          expiresAt: expiresAt,
         });
         return { orderId };
       }),

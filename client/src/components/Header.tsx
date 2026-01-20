@@ -1,10 +1,9 @@
-import { ShoppingCart, Search } from "lucide-react";
+import { ShoppingCart, Search, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/contexts/CartContext";
-import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
 import { Link } from "wouter";
+import { useState, useEffect } from "react";
 
 interface HeaderProps {
   onCartClick: () => void;
@@ -13,8 +12,16 @@ interface HeaderProps {
 
 export default function Header({ onCartClick, onSearchClick }: HeaderProps) {
   const { getCartCount } = useCart();
-  const { isAuthenticated, user } = useAuth();
   const cartCount = getCartCount();
+  const [customerData, setCustomerData] = useState<any>(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem("customerToken");
+    const data = localStorage.getItem("customerData");
+    if (token && data) {
+      setCustomerData(JSON.parse(data));
+    }
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 w-full">
@@ -64,18 +71,19 @@ export default function Header({ onCartClick, onSearchClick }: HeaderProps) {
               </Button>
 
               {/* Login/User Button */}
-              {isAuthenticated && user ? (
-                <Link href="/mis-pedidos">
-                  <Button variant="outline" size="sm">
-                    {user.name || "Mi Cuenta"}
+              {customerData ? (
+                <Link href="/mi-cuenta">
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <User className="h-4 w-4" />
+                    {customerData.name || "Mi Cuenta"}
                   </Button>
                 </Link>
               ) : (
-                <a href={getLoginUrl()}>
+                <Link href="/login">
                   <Button variant="default" size="sm">
                     Iniciar Sesión
                   </Button>
-                </a>
+                </Link>
               )}
             </div>
           </div>

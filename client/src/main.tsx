@@ -43,11 +43,16 @@ const trpcClient = trpc.createClient({
       url: "/api/trpc",
       transformer: superjson,
       fetch(input, init) {
-        // Get admin token from localStorage if exists
+        // Get admin token and customer token from localStorage if exists
         const adminToken = localStorage.getItem('admin_token');
+        const customerToken = localStorage.getItem('customerToken');
+        
+        // Priority: admin token > customer token
+        const token = adminToken || customerToken;
+        
         const headers = {
           ...(init?.headers || {}),
-          ...(adminToken ? { Authorization: `Bearer ${adminToken}` } : {}),
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         };
         
         return globalThis.fetch(input, {

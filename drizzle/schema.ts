@@ -26,6 +26,23 @@ export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
 /**
+ * Customers table for end-user authentication (independent from OAuth users)
+ */
+export const customers = mysqlTable("customers", {
+  id: int("id").autoincrement().primaryKey(),
+  email: varchar("email", { length: 320 }).notNull().unique(),
+  passwordHash: varchar("passwordHash", { length: 255 }).notNull(),
+  name: varchar("name", { length: 200 }),
+  phone: varchar("phone", { length: 50 }),
+  active: int("active").default(1).notNull(), // 0 or 1 for boolean
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  lastLogin: timestamp("lastLogin"),
+});
+
+export type Customer = typeof customers.$inferSelect;
+export type InsertCustomer = typeof customers.$inferInsert;
+
+/**
  * Categories table for software products
  */
 export const categories = mysqlTable("categories", {
@@ -68,6 +85,7 @@ export type InsertProduct = typeof products.$inferInsert;
  */
 export const orders = mysqlTable("orders", {
   id: int("id").autoincrement().primaryKey(),
+  customerId: int("customerId"), // Reference to customers table (null for guest orders)
   userId: int("userId"),
   customerName: varchar("customerName", { length: 200 }),
   customerEmail: varchar("customerEmail", { length: 320 }),
@@ -75,6 +93,7 @@ export const orders = mysqlTable("orders", {
   items: text("items").notNull(), // JSON string of cart items
   totalAmount: int("totalAmount").notNull(), // Total in COP
   status: mysqlEnum("status", ["pending", "completed", "cancelled"]).default("pending").notNull(),
+  expiresAt: timestamp("expiresAt"), // License expiration date (default 30 days from completion)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

@@ -19,6 +19,9 @@ import Support from "./pages/Support";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Returns from "./pages/Returns";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import MyAccount from "./pages/MyAccount";
 
 function Router() {
   return (
@@ -26,6 +29,11 @@ function Router() {
       <Route path={"/"} component={Home} />
       <Route path="/producto/:slug" component={ProductDetail} />
       <Route path="/mis-pedidos" component={MyOrders} />
+      
+      {/* Customer Auth Routes */}
+      <Route path="/login" component={Login} />
+      <Route path="/registro" component={Register} />
+      <Route path="/mi-cuenta" component={MyAccount} />
       
       {/* Legal & Support Routes */}
       <Route path="/soporte" component={Support} />

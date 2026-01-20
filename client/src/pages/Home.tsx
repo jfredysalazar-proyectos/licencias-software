@@ -32,8 +32,19 @@ export default function Home() {
   });
 
   const handleWhatsAppCheckout = () => {
+    // Check if customer is logged in
+    const customerToken = localStorage.getItem("customerToken");
+    const customerDataStr = localStorage.getItem("customerData");
+    const customerData = customerDataStr ? JSON.parse(customerDataStr) : null;
+
     const whatsappNumber = "573001234567";
     let message = "¡Hola! Quiero comprar las siguientes licencias:\n\n";
+
+    // Add customer info if logged in
+    if (customerData) {
+      message += `Cliente: ${customerData.name || customerData.email}\n`;
+      message += `Email: ${customerData.email}\n\n`;
+    }
 
     cart.forEach((item, index) => {
       message += `${index + 1}. ${item.product.name}\n`;
