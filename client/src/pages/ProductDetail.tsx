@@ -11,6 +11,7 @@ import VariantSelector from "@/components/VariantSelector";
 import CartDrawer from "@/components/CartDrawer";
 import Footer from "@/components/Footer";
 import RelatedProductsCarousel from "@/components/RelatedProductsCarousel";
+import SocialProof from "@/components/SocialProof";
 import { toast } from "sonner";
 
 export default function ProductDetail() {
@@ -199,6 +200,9 @@ export default function ProductDetail() {
                 onVariantsChange={setSelectedVariants}
                 onPriceChange={setCurrentPrice}
               />
+
+              {/* Social Proof */}
+              <SocialProof productId={product.id} />
 
               <div>
                 <h2 className="text-xl font-semibold mb-4">Descripción</h2>
