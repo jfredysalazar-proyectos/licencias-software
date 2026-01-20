@@ -301,11 +301,10 @@ export const adminRouter = router({
         const fileName = `${uniqueId}.${fileExtension}`;
         const filePath = `uploads/products/${fileName}`;
 
-        // Save to local filesystem
+        // Save to local filesystem (outside dist to persist across builds)
         const fs = await import("fs/promises");
         const path = await import("path");
-        const publicDir = path.join(process.cwd(), "dist", "public");
-        const uploadsDir = path.join(publicDir, "uploads", "products");
+        const uploadsDir = path.join(process.cwd(), "uploads", "products");
         
         // Ensure directory exists
         await fs.mkdir(uploadsDir, { recursive: true });

@@ -20,6 +20,10 @@ export async function setupVite(app: Express, server: Server) {
     appType: "custom",
   });
 
+  // Serve uploads directory from project root (persists across builds)
+  const uploadsPath = path.resolve(process.cwd(), "uploads");
+  app.use("/uploads", express.static(uploadsPath));
+
   app.use(vite.middlewares);
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
@@ -57,6 +61,10 @@ export function serveStatic(app: Express) {
       `Could not find the build directory: ${distPath}, make sure to build the client first`
     );
   }
+
+  // Serve uploads directory from project root (persists across builds)
+  const uploadsPath = path.resolve(process.cwd(), "uploads");
+  app.use("/uploads", express.static(uploadsPath));
 
   app.use(express.static(distPath));
 
