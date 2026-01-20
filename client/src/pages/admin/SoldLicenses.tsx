@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import AdminLayout from "@/components/AdminLayout";
 
 interface LicenseFormData {
   customerName: string;
@@ -175,14 +176,17 @@ Para renovar tu licencia o adquirir una nueva, contáctanos.
 
   if (isLoading) {
     return (
-      <div className="p-8">
-        <p>Cargando licencias...</p>
-      </div>
+      <AdminLayout>
+        <div className="p-8">
+          <p>Cargando licencias...</p>
+        </div>
+      </AdminLayout>
     );
   }
 
   return (
-    <div className="p-8">
+    <AdminLayout>
+      <div className="p-8">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold">Licencias Vendidas</h1>
@@ -430,5 +434,6 @@ Para renovar tu licencia o adquirir una nueva, contáctanos.
         </table>
       </div>
     </div>
+    </AdminLayout>
   );
 }
