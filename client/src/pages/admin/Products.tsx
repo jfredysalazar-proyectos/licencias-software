@@ -23,6 +23,7 @@ import {
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Upload, X } from "lucide-react";
+import EmojiPicker from "@/components/EmojiPicker";
 import ProductVariantsManager, { Variant } from "@/components/ProductVariantsManager";
 type Product = {
   id: number;
@@ -293,13 +294,36 @@ export default function AdminProducts() {
 
                 <div className="space-y-2">
                   <Label htmlFor="shortDescription">Descripción Corta</Label>
-                  <Input
-                    id="shortDescription"
-                    value={formData.shortDescription}
-                    onChange={(e) =>
-                      setFormData({ ...formData, shortDescription: e.target.value })
-                    }
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      id="shortDescription"
+                      value={formData.shortDescription}
+                      onChange={(e) =>
+                        setFormData({ ...formData, shortDescription: e.target.value })
+                      }
+                      placeholder="Agrega emojis para hacer tu producto más llamativo ✨"
+                    />
+                    <EmojiPicker
+                      onEmojiSelect={(emoji) => {
+                        const input = document.getElementById("shortDescription") as HTMLInputElement;
+                        const start = input.selectionStart || formData.shortDescription.length;
+                        const end = input.selectionEnd || formData.shortDescription.length;
+                        const newValue =
+                          formData.shortDescription.substring(0, start) +
+                          emoji +
+                          formData.shortDescription.substring(end);
+                        setFormData({ ...formData, shortDescription: newValue });
+                        // Set cursor position after emoji
+                        setTimeout(() => {
+                          input.focus();
+                          input.setSelectionRange(start + emoji.length, start + emoji.length);
+                        }, 0);
+                      }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    💡 Usa emojis para hacer tu producto más atractivo en el listado principal
+                  </p>
                 </div>
 
                 <div className="space-y-2">
