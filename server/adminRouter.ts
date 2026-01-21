@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { TRPCError } from "@trpc/server";
 import { publicProcedure, router } from "./_core/trpc";
 import * as db from "./db";
+import { admins } from "../drizzle/schema";
 import { storagePut } from "./storage";
 import sharp from "sharp";
 import { nanoid } from "nanoid";
@@ -110,6 +111,67 @@ export const adminRouter = router({
     ctx.res.clearCookie("admin_session", { path: "/" });
     return { success: true };
   }),
+
+  // Setup endpoint - creates initial admin user (should be removed after first use)
+  setup: publicProcedure
+    .input(
+      z.object({
+        secretKey: z.string().min(1),
+      })
+    )
+    .mutation(async ({ input }) => {
+      // Simple secret key check (change this to something secure)
+      if (input.secretKey !== "setup-admin-2026") {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Invalid setup key",
+        });
+      }
+
+      const ADMIN_USERNAME = "admin";
+      const ADMIN_PASSWORD = "Admin2026!";
+      const ADMIN_EMAIL = "admin@licencias-software.com";
+      const ADMIN_NAME = "Administrador";
+
+      // Check if admin already exists
+      const existingAdmin = await db.getAdminByUsername(ADMIN_USERNAME);
+      
+      if (existingAdmin) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Admin user already exists",
+        });
+      }
+
+      // Hash password
+      const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 10);
+
+      // Create admin using raw SQL since we don't have a createAdmin function
+      const dbInstance = await db.getDb();
+      if (!dbInstance) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Database not available",
+        });
+      }
+
+      await dbInstance.insert(admins).values({
+        username: ADMIN_USERNAME,
+        passwordHash,
+        email: ADMIN_EMAIL,
+        name: ADMIN_NAME,
+        active: 1,
+      });
+
+      return {
+        success: true,
+        message: "Admin user created successfully",
+        credentials: {
+          username: ADMIN_USERNAME,
+          password: ADMIN_PASSWORD,
+        },
+      };
+    }),
 
   me: publicProcedure.query(async ({ ctx }) => {
     // Check for token in Authorization header or cookie
