@@ -10,6 +10,7 @@
     "check": "tsc --noEmit",
     "fix-db": "tsx fix-db-structure.ts",
     "fix-platforms-json": "tsx fix-platforms-json.ts",
+    "fix-platforms-sql": "tsx fix-platforms-sql.ts",
     "format": "prettier --write .",
     "test": "vitest run",
     "db:push": "drizzle-kit generate && drizzle-kit migrate"
