@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Upload, X } from "lucide-react";
 import EmojiPicker from "@/components/EmojiPicker";
 import ProductVariantsManager, { Variant } from "@/components/ProductVariantsManager";
+import PlatformSelector from "@/components/PlatformSelector";
 type Product = {
   id: number;
   name: string;
@@ -63,6 +64,7 @@ export default function AdminProducts() {
     featured: "0",
     inStock: "1",
     features: "",
+    platforms: [] as string[],
   });
 
   const uploadImageMutation = trpc.admin.uploadImage.useMutation({
@@ -123,6 +125,7 @@ export default function AdminProducts() {
       featured: "0",
       inStock: "1",
       features: "",
+      platforms: [],
     });
     setEditingProduct(null);
     setImagePreview(null);
@@ -131,6 +134,17 @@ export default function AdminProducts() {
 
   const handleEdit = async (product: Product) => {
     setEditingProduct(product);
+    
+    // Parse platforms from JSON string
+    let platforms: string[] = [];
+    try {
+      if ((product as any).platforms) {
+        platforms = JSON.parse((product as any).platforms);
+      }
+    } catch (e) {
+      console.error("Error parsing platforms:", e);
+    }
+    
     setFormData({
       name: product.name,
       slug: product.slug,
@@ -142,6 +156,7 @@ export default function AdminProducts() {
       featured: product.featured.toString(),
       inStock: product.inStock.toString(),
       features: product.features || "",
+      platforms: platforms,
     });
     // Set image preview with full URL if it's a relative path
     if (product.imageUrl) {
@@ -226,6 +241,7 @@ export default function AdminProducts() {
       featured: parseInt(formData.featured),
       inStock: parseInt(formData.inStock),
       features: formData.features || undefined,
+      platforms: formData.platforms.length > 0 ? JSON.stringify(formData.platforms) : undefined,
     };
 
     if (editingProduct) {
@@ -475,6 +491,12 @@ export default function AdminProducts() {
                     placeholder='["Característica 1", "Característica 2"]'
                   />
                 </div>
+
+                {/* Platform Selector */}
+                <PlatformSelector
+                  selected={formData.platforms}
+                  onChange={(platforms) => setFormData({ ...formData, platforms })}
+                />
 
                 {/* Product Variants */}
                 <ProductVariantsManager

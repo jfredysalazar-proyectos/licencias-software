@@ -13,6 +13,7 @@ import Footer from "@/components/Footer";
 import RelatedProductsCarousel from "@/components/RelatedProductsCarousel";
 import SocialProof from "@/components/SocialProof";
 import PurchaseNotification from "@/components/PurchaseNotification";
+import PlatformIcons from "@/components/PlatformIcons";
 import { toast } from "sonner";
 
 export default function ProductDetail() {
@@ -192,6 +193,13 @@ export default function ProductDetail() {
                   <p className="text-sm text-muted-foreground mt-2">
                     Precio base: ${product.basePrice.toLocaleString("es-CO")} COP
                   </p>
+                )}
+                
+                {/* Platform Icons */}
+                {(product as any).platforms && (
+                  <PlatformIcons 
+                    platforms={JSON.parse((product as any).platforms)} 
+                  />
                 )}
               </div>
 

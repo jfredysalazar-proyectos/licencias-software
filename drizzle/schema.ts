@@ -73,6 +73,7 @@ export const products = mysqlTable("products", {
   featured: int("featured").default(0).notNull(), // 0 or 1 for boolean
   inStock: int("inStock").default(1).notNull(), // 0 or 1 for boolean
   features: text("features"), // JSON string of features array
+  platforms: text("platforms"), // JSON string of platforms array: ["windows", "macos", "android", "ios", "linux"]
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
