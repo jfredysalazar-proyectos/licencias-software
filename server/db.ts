@@ -236,9 +236,13 @@ export async function createProduct(product: InsertProduct): Promise<number> {
     updatedAt: now
   };
   
-  // Agregar campos opcionales solo si están definidos
-  if (product.features !== undefined) insertData.features = product.features;
-  if (product.platforms !== undefined) insertData.platforms = product.platforms;
+  // Agregar campos opcionales solo si están definidos y no son strings vacíos
+  if (product.features !== undefined && product.features !== null && product.features.trim() !== '') {
+    insertData.features = product.features;
+  }
+  if (product.platforms !== undefined && product.platforms !== null && product.platforms !== '') {
+    insertData.platforms = product.platforms;
+  }
   
   console.log('[createProduct] SOLUCIÓN DEFINITIVA - Proporcionando valores explícitos para todos los campos');
   
