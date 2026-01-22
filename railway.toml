@@ -1,0 +1,11 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "node dist/index.js"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10
+
+[[deploy.volumes]]
+mountPath = "/app/uploads"
+name = "uploads-volume"
