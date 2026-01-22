@@ -236,6 +236,14 @@ export async function createProduct(product: InsertProduct): Promise<number> {
   if (product.features !== undefined) insertData.features = product.features;
   if (product.platforms !== undefined) insertData.platforms = product.platforms;
   
+  // CRUCIAL: Eliminar todas las claves con valor undefined del objeto
+  // Esto evita que Drizzle genere queries con DEFAULT keyword
+  Object.keys(insertData).forEach(key => {
+    if (insertData[key] === undefined) {
+      delete insertData[key];
+    }
+  });
+  
   const result = await db.insert(products).values(insertData);
   return result[0].insertId;
 }
