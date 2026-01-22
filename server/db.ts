@@ -326,6 +326,7 @@ export async function createProductVariant(variant: InsertProductVariant): Promi
   if (!db) throw new Error("Database not available");
   
   // Solo insertar campos explícitos, sin id ni createdAt (se manejan automáticamente)
+  // Fix: Evitar el error "Failed query: insert into product_variants with default values"
   const insertData = {
     productId: variant.productId,
     name: variant.name,
