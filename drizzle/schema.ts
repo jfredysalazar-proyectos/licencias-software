@@ -200,3 +200,21 @@ export const soldLicenses = mysqlTable("sold_licenses", {
 
 export type SoldLicense = typeof soldLicenses.$inferSelect;
 export type InsertSoldLicense = typeof soldLicenses.$inferInsert;
+
+/**
+ * Payment methods table for configurable payment options
+ */
+export const paymentMethods = mysqlTable("payment_methods", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 50 }).notNull().unique(), // Internal identifier (whatsapp, hoodpay)
+  displayName: varchar("displayName", { length: 100 }).notNull(), // Display name for customers
+  description: text("description"), // Description of the payment method
+  enabled: int("enabled").default(0).notNull(), // 0 or 1 for boolean
+  config: text("config"), // JSON string with method-specific configuration
+  sortOrder: int("sortOrder").default(0).notNull(), // Display order
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type PaymentMethod = typeof paymentMethods.$inferSelect;
+export type InsertPaymentMethod = typeof paymentMethods.$inferInsert;

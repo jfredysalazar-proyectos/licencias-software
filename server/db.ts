@@ -1,6 +1,6 @@
 import { eq, like, and, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, categories, Category, InsertCategory, products, Product, InsertProduct, orders, Order, InsertOrder, admins, Admin, InsertAdmin, settings, Setting, InsertSetting, customers, Customer, InsertCustomer, productVariants, ProductVariant, InsertProductVariant, variantOptions, VariantOption, InsertVariantOption, productSkus, ProductSku, InsertProductSku, soldLicenses, SoldLicense, InsertSoldLicense } from "../drizzle/schema";
+import { InsertUser, users, categories, Category, InsertCategory, products, Product, InsertProduct, orders, Order, InsertOrder, admins, Admin, InsertAdmin, settings, Setting, InsertSetting, customers, Customer, InsertCustomer, productVariants, ProductVariant, InsertProductVariant, variantOptions, VariantOption, InsertVariantOption, productSkus, ProductSku, InsertProductSku, soldLicenses, SoldLicense, InsertSoldLicense, paymentMethods, PaymentMethod, InsertPaymentMethod } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -548,4 +548,39 @@ export async function getExpiringSoonLicenses(daysThreshold: number = 30): Promi
     const expirationDate = new Date(license.expirationDate);
     return expirationDate >= today && expirationDate <= futureDate;
   });
+}
+
+// ==================== PAYMENT METHODS ====================
+
+export async function getAllPaymentMethods(): Promise<PaymentMethod[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db.select().from(paymentMethods).orderBy(paymentMethods.sortOrder);
+}
+
+export async function getPaymentMethodByName(name: string): Promise<PaymentMethod | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  const results = await db.select().from(paymentMethods).where(eq(paymentMethods.name, name));
+  return results[0] || null;
+}
+
+export async function getEnabledPaymentMethods(): Promise<PaymentMethod[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const results = await db.select().from(paymentMethods).where(eq(paymentMethods.enabled, 1)).orderBy(paymentMethods.sortOrder);
+  return results;
+}
+
+export async function updatePaymentMethod(
+  id: number,
+  data: Partial<Omit<PaymentMethod, "id" | "createdAt" | "updatedAt">>
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(paymentMethods).set(data).where(eq(paymentMethods.id, id));
 }

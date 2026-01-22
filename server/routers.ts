@@ -119,6 +119,12 @@ export const appRouter = router({
       }),
   }),
 
+  paymentMethods: router({
+    getEnabled: publicProcedure.query(async () => {
+      return await db.getEnabledPaymentMethods();
+    }),
+  }),
+
   orders: router({
     create: publicProcedure
       .input(

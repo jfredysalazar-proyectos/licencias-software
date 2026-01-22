@@ -645,4 +645,25 @@ export const adminRouter = router({
         return { success: true };
       }),
   }),
+
+  // ==================== PAYMENT METHODS ====================
+  paymentMethods: router({
+    list: adminProcedure.query(async () => {
+      return await db.getAllPaymentMethods();
+    }),
+
+    update: adminProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          enabled: z.boolean().optional(),
+          config: z.any().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updatePaymentMethod(id, data);
+        return { success: true };
+      }),
+  }),
 });
