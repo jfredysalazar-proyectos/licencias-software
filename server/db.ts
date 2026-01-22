@@ -238,11 +238,15 @@ export async function createProduct(product: InsertProduct): Promise<number> {
   
   // CRUCIAL: Eliminar todas las claves con valor undefined del objeto
   // Esto evita que Drizzle genere queries con DEFAULT keyword
+  console.log('[createProduct] VERSIÓN CORREGIDA - Eliminando campos undefined');
+  console.log('[createProduct] insertData ANTES:', JSON.stringify(insertData));
   Object.keys(insertData).forEach(key => {
     if (insertData[key] === undefined) {
+      console.log(`[createProduct] Eliminando campo ${key} con valor undefined`);
       delete insertData[key];
     }
   });
+  console.log('[createProduct] insertData DESPUÉS:', JSON.stringify(insertData));
   
   const result = await db.insert(products).values(insertData);
   return result[0].insertId;
