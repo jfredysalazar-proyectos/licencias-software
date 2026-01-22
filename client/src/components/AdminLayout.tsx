@@ -10,7 +10,8 @@ import {
   ShoppingCart, 
   Settings, 
   LogOut,
-  Key
+  Key,
+  CreditCard
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -55,6 +56,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { icon: ShoppingCart, label: "Pedidos", path: "/admin/orders" },
     { icon: Key, label: "Licencias Vendidas", path: "/admin/sold-licenses" },
     { icon: Users, label: "Clientes", path: "/admin/customers" },
+    { icon: CreditCard, label: "Métodos de Pago", path: "/admin/payment-methods" },
     { icon: Settings, label: "Configuración", path: "/admin/settings" },
   ];
 

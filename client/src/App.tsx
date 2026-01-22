@@ -18,6 +18,7 @@ import AdminOrders from "./pages/admin/Orders";
 import AdminCustomers from "./pages/admin/Customers";
 import AdminSettings from "./pages/admin/Settings";
 import AdminSoldLicenses from "./pages/admin/SoldLicenses";
+import AdminPaymentMethods from "./pages/admin/PaymentMethods";
 import Support from "./pages/Support";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
@@ -55,6 +56,7 @@ function Router() {
       <Route path="/admin/customers" component={AdminCustomers} />
       <Route path="/admin/settings" component={AdminSettings} />
       <Route path="/admin/sold-licenses" component={AdminSoldLicenses} />
+      <Route path="/admin/payment-methods" component={AdminPaymentMethods} />
       
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}

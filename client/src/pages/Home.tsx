@@ -32,14 +32,23 @@ export default function Home() {
     return matchesCategory && matchesSearch;
   });
 
-  const handleWhatsAppCheckout = () => {
+  const handleCheckout = (paymentMethod: any) => {
+    if (paymentMethod.name === "whatsapp") {
+      handleWhatsAppCheckout(paymentMethod);
+    } else if (paymentMethod.name === "hoodpay") {
+      handleHoodpayCheckout(paymentMethod);
+    }
+  };
+
+  const handleWhatsAppCheckout = (paymentMethod: any) => {
+    const config = paymentMethod.config ? JSON.parse(paymentMethod.config) : {};
     // Check if customer is logged in
     const customerToken = localStorage.getItem("customerToken");
     const customerDataStr = localStorage.getItem("customerData");
     const customerData = customerDataStr ? JSON.parse(customerDataStr) : null;
 
-    const whatsappNumber = "573001234567";
-    let message = "¡Hola! Quiero comprar las siguientes licencias:\n\n";
+    const whatsappNumber = config.phone || "573001234567";
+    let message = (config.message_template || "¡Hola! Quiero comprar las siguientes licencias:") + "\n\n";
 
     // Add customer info if logged in
     if (customerData) {
@@ -69,6 +78,13 @@ export default function Home() {
 
     const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
     window.open(url, "_blank");
+  };
+
+  const handleHoodpayCheckout = (paymentMethod: any) => {
+    // TODO: Implement Hoodpay checkout
+    // This will create an order and redirect to Hoodpay payment page
+    console.log("Hoodpay checkout", paymentMethod);
+    alert("Integración de Hoodpay en desarrollo. Próximamente disponible.");
   };
 
   return (
@@ -284,7 +300,7 @@ export default function Home() {
               size="lg"
               variant="secondary"
               onClick={() => {
-                const whatsappNumber = "573001234567";
+                const whatsappNumber = config.phone || "573001234567";
                 const message = "Hola, tengo una consulta sobre las licencias de software";
                 window.open(
                   `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`,
@@ -304,7 +320,7 @@ export default function Home() {
       <CartDrawer
         open={cartOpen}
         onClose={() => setCartOpen(false)}
-        onCheckout={handleWhatsAppCheckout}
+        onCheckout={handleCheckout}
       />
 
       {/* Purchase Notifications */}

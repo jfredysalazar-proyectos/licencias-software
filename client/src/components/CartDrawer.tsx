@@ -4,19 +4,20 @@ import { useCart } from "@/contexts/CartContext";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import PaymentMethodSelector from "@/components/PaymentMethodSelector";
 
 interface CartDrawerProps {
   open: boolean;
   onClose: () => void;
-  onCheckout: () => void;
+  onCheckout: (paymentMethod: any) => void;
 }
 
 export default function CartDrawer({ open, onClose, onCheckout }: CartDrawerProps) {
   const { cart, removeFromCart, updateQuantity, getCartTotal, getCartCount } = useCart();
 
-  const handleCheckout = () => {
+  const handleCheckout = (paymentMethod: any) => {
     onClose();
-    onCheckout();
+    onCheckout(paymentMethod);
   };
 
   return (
@@ -134,13 +135,7 @@ export default function CartDrawer({ open, onClose, onCheckout }: CartDrawerProp
                   ${getCartTotal().toLocaleString("es-CO")} COP
                 </span>
               </div>
-              <Button
-                className="w-full"
-                size="lg"
-                onClick={handleCheckout}
-              >
-                Comprar por WhatsApp
-              </Button>
+              <PaymentMethodSelector onSelectMethod={handleCheckout} />
             </div>
           </div>
         )}
