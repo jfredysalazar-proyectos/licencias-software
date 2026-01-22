@@ -63,7 +63,6 @@ export default function AdminProducts() {
     imageUrl: "",
     featured: "0",
     inStock: "1",
-    features: "",
     platforms: [] as string[],
   });
 
@@ -124,7 +123,6 @@ export default function AdminProducts() {
       imageUrl: "",
       featured: "0",
       inStock: "1",
-      features: "",
       platforms: [],
     });
     setEditingProduct(null);
@@ -155,7 +153,6 @@ export default function AdminProducts() {
       imageUrl: product.imageUrl || "",
       featured: (product.featured ?? 0).toString(),
       inStock: (product.inStock ?? 1).toString(),
-      features: product.features || "",
       platforms: platforms,
     });
     // Set image preview with full URL if it's a relative path
@@ -240,7 +237,6 @@ export default function AdminProducts() {
       imageUrl: formData.imageUrl || undefined,
       featured: parseInt(formData.featured),
       inStock: parseInt(formData.inStock),
-      features: formData.features && formData.features.trim() !== '' ? formData.features : undefined,
       platforms: formData.platforms.length > 0 ? JSON.stringify(formData.platforms) : undefined,
     };
 
@@ -479,17 +475,6 @@ export default function AdminProducts() {
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="features">Características (JSON)</Label>
-                  <Textarea
-                    id="features"
-                    value={formData.features}
-                    onChange={(e) => setFormData({ ...formData, features: e.target.value })}
-                    rows={3}
-                    placeholder='["Característica 1", "Característica 2"]'
-                  />
                 </div>
 
                 {/* Platform Selector */}
