@@ -153,8 +153,8 @@ export default function AdminProducts() {
       categoryId: product.categoryId.toString(),
       basePrice: product.basePrice.toString(),
       imageUrl: product.imageUrl || "",
-      featured: product.featured.toString(),
-      inStock: product.inStock.toString(),
+      featured: (product.featured ?? 0).toString(),
+      inStock: (product.inStock ?? 1).toString(),
       features: product.features || "",
       platforms: platforms,
     });

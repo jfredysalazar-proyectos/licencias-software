@@ -219,7 +219,9 @@ export async function createProduct(product: InsertProduct): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  // Solo insertar campos explícitos, excluyendo los que tienen valores por defecto
+  // SOLUCIÓN DEFINITIVA: Siempre proporcionar valores explícitos para TODOS los campos requeridos
+  // Esto evita que Drizzle intente usar DEFAULT keyword
+  const now = new Date();
   const insertData: any = {
     name: product.name,
     slug: product.slug,
@@ -227,26 +229,18 @@ export async function createProduct(product: InsertProduct): Promise<number> {
     shortDescription: product.shortDescription,
     categoryId: product.categoryId,
     basePrice: product.basePrice,
-    imageUrl: product.imageUrl
+    imageUrl: product.imageUrl,
+    featured: product.featured !== undefined ? product.featured : 0,
+    inStock: product.inStock !== undefined ? product.inStock : 1,
+    createdAt: now,
+    updatedAt: now
   };
   
   // Agregar campos opcionales solo si están definidos
-  if (product.featured !== undefined) insertData.featured = product.featured;
-  if (product.inStock !== undefined) insertData.inStock = product.inStock;
   if (product.features !== undefined) insertData.features = product.features;
   if (product.platforms !== undefined) insertData.platforms = product.platforms;
   
-  // CRUCIAL: Eliminar todas las claves con valor undefined del objeto
-  // Esto evita que Drizzle genere queries con DEFAULT keyword
-  console.log('[createProduct] VERSIÓN CORREGIDA - Eliminando campos undefined');
-  console.log('[createProduct] insertData ANTES:', JSON.stringify(insertData));
-  Object.keys(insertData).forEach(key => {
-    if (insertData[key] === undefined) {
-      console.log(`[createProduct] Eliminando campo ${key} con valor undefined`);
-      delete insertData[key];
-    }
-  });
-  console.log('[createProduct] insertData DESPUÉS:', JSON.stringify(insertData));
+  console.log('[createProduct] SOLUCIÓN DEFINITIVA - Proporcionando valores explícitos para todos los campos');
   
   const result = await db.insert(products).values(insertData);
   return result[0].insertId;
