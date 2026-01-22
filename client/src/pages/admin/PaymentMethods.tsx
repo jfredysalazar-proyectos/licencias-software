@@ -94,7 +94,9 @@ export default function PaymentMethods() {
                     <CreditCard className="h-6 w-6 text-primary" />
                     <div>
                       <CardTitle>{method.displayName}</CardTitle>
-                      <CardDescription>{method.description}</CardDescription>
+                      <CardDescription>
+                        {method.name === 'whatsapp' ? 'Contacta por WhatsApp para completar tu compra' : 'Paga con criptomonedas de forma segura'}
+                      </CardDescription>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
