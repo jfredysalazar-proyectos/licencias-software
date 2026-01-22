@@ -227,6 +227,7 @@ export const adminRouter = router({
           featured: z.number().min(0).max(1).default(0),
           inStock: z.number().min(0).max(1).default(1),
           features: z.string().optional(),
+          platforms: z.string().optional(),
         })
       )
       .mutation(async ({ input }) => {
@@ -248,6 +249,7 @@ export const adminRouter = router({
           featured: z.number().min(0).max(1).optional(),
           inStock: z.number().min(0).max(1).optional(),
           features: z.string().optional(),
+          platforms: z.string().optional(),
         })
       )
       .mutation(async ({ input }) => {
