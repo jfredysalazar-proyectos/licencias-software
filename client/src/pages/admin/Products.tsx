@@ -240,7 +240,7 @@ export default function AdminProducts() {
       imageUrl: formData.imageUrl || undefined,
       featured: parseInt(formData.featured),
       inStock: parseInt(formData.inStock),
-      features: formData.features || undefined,
+      features: formData.features && formData.features.trim() !== '' ? formData.features : undefined,
       platforms: formData.platforms.length > 0 ? JSON.stringify(formData.platforms) : undefined,
     };
 
