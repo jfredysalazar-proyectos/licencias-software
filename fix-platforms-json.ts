@@ -28,20 +28,29 @@ async function fixPlatformsJSON() {
     let newPlatformsValue: string | null = null;
     
     if (product.platforms) {
-      try {
-        // Intentar parsear como JSON
-        JSON.parse(product.platforms);
-        console.log('✅ El campo platforms ya es JSON válido');
-      } catch (e) {
-        console.log('⚠️  El campo platforms NO es JSON válido, necesita corrección');
+      // Verificar si platforms es un array (ya parseado por Drizzle) o un string
+      if (Array.isArray(product.platforms)) {
+        console.log('✅ El campo platforms ya es un array válido:', product.platforms);
+        // Convertir el array a JSON string para guardarlo correctamente
+        newPlatformsValue = JSON.stringify(product.platforms);
         needsFix = true;
-        
-        // Convertir el texto plano a JSON array
-        // Si es "windows", convertir a ["windows"]
-        // Si es "windows,mac", convertir a ["windows","mac"]
-        const platformsArray = product.platforms.split(',').map(p => p.trim()).filter(p => p.length > 0);
-        newPlatformsValue = JSON.stringify(platformsArray);
-        console.log('🔄 Nuevo valor de platforms:', newPlatformsValue);
+        console.log('🔄 Convirtiendo array a JSON string:', newPlatformsValue);
+      } else if (typeof product.platforms === 'string') {
+        try {
+          // Intentar parsear como JSON
+          JSON.parse(product.platforms);
+          console.log('✅ El campo platforms ya es JSON string válido');
+        } catch (e) {
+          console.log('⚠️  El campo platforms NO es JSON válido, necesita corrección');
+          needsFix = true;
+          
+          // Convertir el texto plano a JSON array
+          // Si es "windows", convertir a ["windows"]
+          // Si es "windows,mac", convertir a ["windows","mac"]
+          const platformsArray = product.platforms.split(',').map(p => p.trim()).filter(p => p.length > 0);
+          newPlatformsValue = JSON.stringify(platformsArray);
+          console.log('🔄 Nuevo valor de platforms:', newPlatformsValue);
+        }
       }
     } else {
       console.log('ℹ️  El campo platforms es NULL, no necesita corrección');
@@ -65,18 +74,30 @@ async function fixPlatformsJSON() {
     
     for (const prod of allProducts) {
       if (prod.platforms) {
-        try {
-          JSON.parse(prod.platforms);
-        } catch (e) {
-          console.log(`⚠️  Producto "${prod.name}" tiene platforms inválido: ${prod.platforms}`);
-          const platformsArray = prod.platforms.split(',').map(p => p.trim()).filter(p => p.length > 0);
-          const correctedValue = JSON.stringify(platformsArray);
-          
+        let needsProductFix = false;
+        let correctedValue: string | null = null;
+        
+        if (Array.isArray(prod.platforms)) {
+          // Es un array, convertir a JSON string
+          correctedValue = JSON.stringify(prod.platforms);
+          needsProductFix = true;
+          console.log(`🔄 Producto "${prod.name}" - Convirtiendo array a JSON: ${correctedValue}`);
+        } else if (typeof prod.platforms === 'string') {
+          try {
+            JSON.parse(prod.platforms);
+          } catch (e) {
+            console.log(`⚠️  Producto "${prod.name}" tiene platforms inválido: ${prod.platforms}`);
+            const platformsArray = prod.platforms.split(',').map(p => p.trim()).filter(p => p.length > 0);
+            correctedValue = JSON.stringify(platformsArray);
+            needsProductFix = true;
+            console.log(`✅ Corregido a: ${correctedValue}`);
+          }
+        }
+        
+        if (needsProductFix && correctedValue) {
           await db.update(schema.products)
             .set({ platforms: correctedValue })
             .where(eq(schema.products.id, prod.id));
-          
-          console.log(`✅ Corregido a: ${correctedValue}`);
           fixedCount++;
         }
       }
