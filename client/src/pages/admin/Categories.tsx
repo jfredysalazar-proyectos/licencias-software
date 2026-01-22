@@ -145,6 +145,7 @@ export default function AdminCategories() {
         const result = await uploadImageMutation.mutateAsync({
           imageData: base64,
           fileName: file.name,
+          type: "category",
         });
         setFormData({ ...formData, iconUrl: result.url });
         toast.success("Icono subido exitosamente");
