@@ -324,8 +324,20 @@ export async function getProductVariants(productId: number): Promise<ProductVari
 export async function createProductVariant(variant: InsertProductVariant): Promise<ProductVariant> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(productVariants).values(variant);
-  return { ...variant, id: Number(result[0].insertId) } as ProductVariant;
+  
+  // Solo insertar campos explícitos, sin id ni createdAt (se manejan automáticamente)
+  const insertData = {
+    productId: variant.productId,
+    name: variant.name,
+    position: variant.position ?? 0,
+  };
+  
+  const result = await db.insert(productVariants).values(insertData);
+  return { 
+    ...insertData, 
+    id: Number(result[0].insertId),
+    createdAt: new Date(),
+  } as ProductVariant;
 }
 
 export async function updateProductVariant(id: number, data: Partial<InsertProductVariant>): Promise<void> {
@@ -354,8 +366,20 @@ export async function getVariantOptions(variantId: number): Promise<VariantOptio
 export async function createVariantOption(option: InsertVariantOption): Promise<VariantOption> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(variantOptions).values(option);
-  return { ...option, id: Number(result[0].insertId) } as VariantOption;
+  
+  // Solo insertar campos explícitos, sin id ni createdAt (se manejan automáticamente)
+  const insertData = {
+    variantId: option.variantId,
+    value: option.value,
+    position: option.position ?? 0,
+  };
+  
+  const result = await db.insert(variantOptions).values(insertData);
+  return { 
+    ...insertData, 
+    id: Number(result[0].insertId),
+    createdAt: new Date(),
+  } as VariantOption;
 }
 
 export async function updateVariantOption(id: number, data: Partial<InsertVariantOption>): Promise<void> {
@@ -395,8 +419,23 @@ export async function getProductSkuBySku(sku: string): Promise<ProductSku | unde
 export async function createProductSku(sku: InsertProductSku): Promise<ProductSku> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(productSkus).values(sku);
-  return { ...sku, id: Number(result[0].insertId) } as ProductSku;
+  
+  // Solo insertar campos explícitos, sin id, createdAt ni updatedAt (se manejan automáticamente)
+  const insertData = {
+    productId: sku.productId,
+    sku: sku.sku,
+    variantCombination: sku.variantCombination,
+    price: sku.price,
+    inStock: sku.inStock ?? 1,
+  };
+  
+  const result = await db.insert(productSkus).values(insertData);
+  return { 
+    ...insertData, 
+    id: Number(result[0].insertId),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  } as ProductSku;
 }
 
 export async function updateProductSku(id: number, data: Partial<InsertProductSku>): Promise<void> {
