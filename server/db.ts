@@ -218,7 +218,25 @@ export async function upsertSetting(key: string, value: string, description?: st
 export async function createProduct(product: InsertProduct): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(products).values(product);
+  
+  // Solo insertar campos explícitos, excluyendo los que tienen valores por defecto
+  const insertData: any = {
+    name: product.name,
+    slug: product.slug,
+    description: product.description,
+    shortDescription: product.shortDescription,
+    categoryId: product.categoryId,
+    basePrice: product.basePrice,
+    imageUrl: product.imageUrl
+  };
+  
+  // Agregar campos opcionales solo si están definidos
+  if (product.featured !== undefined) insertData.featured = product.featured;
+  if (product.inStock !== undefined) insertData.inStock = product.inStock;
+  if (product.features !== undefined) insertData.features = product.features;
+  if (product.platforms !== undefined) insertData.platforms = product.platforms;
+  
+  const result = await db.insert(products).values(insertData);
   return result[0].insertId;
 }
 
