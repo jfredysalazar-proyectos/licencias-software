@@ -36,7 +36,22 @@ export const appRouter = router({
 
   products: router({
     list: publicProcedure.query(async () => {
-      return await db.getAllProducts();
+      const products = await db.getAllProducts();
+      // Normalizar platforms en todos los productos
+      return products.map(product => {
+        if (product.platforms) {
+          if (Array.isArray(product.platforms)) {
+            product.platforms = JSON.stringify(product.platforms) as any;
+          } else if (typeof product.platforms === 'string') {
+            try {
+              JSON.parse(product.platforms);
+            } catch (e) {
+              product.platforms = JSON.stringify([product.platforms]) as any;
+            }
+          }
+        }
+        return product;
+      });
     }),
     featured: publicProcedure.query(async () => {
       return await db.getFeaturedProducts();
@@ -49,7 +64,22 @@ export const appRouter = router({
     getBySlug: publicProcedure
       .input(z.object({ slug: z.string() }))
       .query(async ({ input }) => {
-        return await db.getProductBySlug(input.slug);
+        const product = await db.getProductBySlug(input.slug);
+        if (product && product.platforms) {
+          // Normalizar platforms: si es array, convertir a JSON string
+          if (Array.isArray(product.platforms)) {
+            product.platforms = JSON.stringify(product.platforms) as any;
+          } else if (typeof product.platforms === 'string') {
+            // Verificar si ya es JSON válido
+            try {
+              JSON.parse(product.platforms);
+            } catch (e) {
+              // Si no es JSON válido, convertir a array JSON
+              product.platforms = JSON.stringify([product.platforms]) as any;
+            }
+          }
+        }
+        return product;
       }),
     search: publicProcedure
       .input(z.object({ query: z.string() }))
