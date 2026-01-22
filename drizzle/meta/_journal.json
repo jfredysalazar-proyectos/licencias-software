@@ -50,6 +50,13 @@
       "when": 1737566000000,
       "tag": "0006_add_platforms_to_products",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1737567000000,
+      "tag": "0007_fix_products_table_defaults",
+      "breakpoints": true
     }
   ]
 }
