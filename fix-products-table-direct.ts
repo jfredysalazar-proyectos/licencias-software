@@ -9,6 +9,30 @@ async function fixProductsTable() {
   try {
     console.log('✅ Conexión establecida');
     console.log('');
+    console.log('📋 Verificando estructura de la tabla products...');
+    console.log('');
+    
+    // Verificar si la columna platforms existe
+    const [columns] = await connection.execute(`
+      SELECT COLUMN_NAME 
+      FROM INFORMATION_SCHEMA.COLUMNS 
+      WHERE TABLE_SCHEMA = DATABASE() 
+        AND TABLE_NAME = 'products' 
+        AND COLUMN_NAME = 'platforms'
+    `) as any;
+    
+    if (columns.length === 0) {
+      console.log('⚠️  La columna platforms NO EXISTE. Agregándola...');
+      await connection.execute(`
+        ALTER TABLE products 
+        ADD COLUMN platforms JSON NULL
+      `);
+      console.log('   ✅ Columna platforms agregada');
+    } else {
+      console.log('✅ La columna platforms ya existe');
+    }
+    
+    console.log('');
     console.log('📋 Ejecutando comandos SQL para arreglar la tabla products...');
     console.log('');
     
