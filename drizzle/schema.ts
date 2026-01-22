@@ -70,12 +70,12 @@ export const products = mysqlTable("products", {
   categoryId: int("categoryId").notNull(),
   basePrice: int("basePrice").notNull(), // Price in COP
   imageUrl: text("imageUrl"),
-  featured: int("featured").default(0).notNull(), // 0 or 1 for boolean
-  inStock: int("inStock").default(1).notNull(), // 0 or 1 for boolean
+  featured: int("featured").notNull().$default(() => 0), // 0 or 1 for boolean
+  inStock: int("inStock").notNull().$default(() => 1), // 0 or 1 for boolean
   features: text("features"), // JSON string of features array
   platforms: text("platforms"), // JSON string of platforms array: ["windows", "macos", "android", "ios", "linux"]
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("createdAt").notNull().$defaultFn(() => new Date()),
+  updatedAt: timestamp("updatedAt").notNull().$defaultFn(() => new Date()).onUpdateNow(),
 });
 
 export type Product = typeof products.$inferSelect;
