@@ -166,3 +166,55 @@ export function parseHoodpayWebhook(payload: any): HoodpayWebhookEvent {
     data: payload.data,
   };
 }
+
+/**
+ * Create an order in Hoodpay (simplified wrapper)
+ */
+export async function createHoodpayOrder(params: {
+  apiKey: string;
+  amount: number;
+  currency: string;
+  customerEmail: string;
+  customerName?: string;
+  items: Array<{
+    productId: number;
+    productName: string;
+    quantity: number;
+    price: number;
+  }>;
+}): Promise<{ id: string; payment_url: string }> {
+  // Build description from items
+  const description = params.items
+    .map(item => `${item.productName} x${item.quantity}`)
+    .join(', ');
+
+  const apiUrl = 'https://api.hoodpay.io/v1/payments';
+  
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${params.apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      amount: params.amount,
+      currency: params.currency,
+      name: params.customerName || params.customerEmail,
+      description: description,
+      customer_email: params.customerEmail,
+      redirect_url: `${process.env.FRONTEND_URL || 'https://licencias-software-production.up.railway.app'}/order-success`,
+      notify_url: `${process.env.BACKEND_URL || 'https://licencias-software-production.up.railway.app'}/api/webhooks/hoodpay`,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Unknown error' }));
+    throw new Error(`Hoodpay API error: ${error.message || response.statusText}`);
+  }
+
+  const payment = await response.json();
+  return {
+    id: payment.id,
+    payment_url: payment.checkout_url,
+  };
+}

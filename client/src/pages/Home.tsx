@@ -22,6 +22,7 @@ export default function Home() {
   const { data: categories } = trpc.categories.list.useQuery();
   const { data: products } = trpc.products.list.useQuery();
   const { cart } = useCart();
+  const createHoodpayOrderMutation = trpc.paymentMethods.createHoodpayOrder.useMutation();
 
   const filteredProducts = products?.filter((product) => {
     const matchesCategory = selectedCategory === null || product.categoryId === selectedCategory;
@@ -80,11 +81,55 @@ export default function Home() {
     window.open(url, "_blank");
   };
 
-  const handleHoodpayCheckout = (paymentMethod: any) => {
-    // TODO: Implement Hoodpay checkout
-    // This will create an order and redirect to Hoodpay payment page
-    console.log("Hoodpay checkout", paymentMethod);
-    alert("Integración de Hoodpay en desarrollo. Próximamente disponible.");
+  const handleHoodpayCheckout = async (paymentMethod: any) => {
+    try {
+      // Get customer info (prompt if not logged in)
+      const customerDataStr = localStorage.getItem("customerData");
+      let customerData = customerDataStr ? JSON.parse(customerDataStr) : null;
+
+      // If no customer data, prompt for email
+      if (!customerData || !customerData.email) {
+        const email = prompt("Por favor ingresa tu email para continuar con el pago:");
+        if (!email) {
+          return; // User cancelled
+        }
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          alert("Por favor ingresa un email válido");
+          return;
+        }
+        customerData = { email, name: email.split('@')[0] };
+      }
+
+      // Prepare items for Hoodpay
+      const items = cart.map(item => ({
+        productId: item.product.id,
+        productName: item.product.name,
+        quantity: item.quantity,
+        price: item.product.basePrice,
+      }));
+
+      // Calculate total
+      const totalAmount = cart.reduce(
+        (sum, item) => sum + item.product.basePrice * item.quantity,
+        0
+      );
+
+      // Create Hoodpay order
+      const result = await createHoodpayOrderMutation.mutateAsync({
+        customerEmail: customerData.email,
+        customerName: customerData.name,
+        items,
+        totalAmount,
+      });
+
+      // Redirect to Hoodpay payment page
+      window.location.href = result.paymentUrl;
+    } catch (error: any) {
+      console.error("Error creating Hoodpay order:", error);
+      alert(`Error al crear la orden: ${error.message || 'Por favor intenta de nuevo'}`);
+    }
   };
 
   return (

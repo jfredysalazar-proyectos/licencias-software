@@ -123,6 +123,61 @@ export const appRouter = router({
     getEnabled: publicProcedure.query(async () => {
       return await db.getEnabledPaymentMethods();
     }),
+    createHoodpayOrder: publicProcedure
+      .input(
+        z.object({
+          customerEmail: z.string().email(),
+          customerName: z.string().optional(),
+          items: z.array(
+            z.object({
+              productId: z.number(),
+              productName: z.string(),
+              quantity: z.number(),
+              price: z.number(),
+            })
+          ),
+          totalAmount: z.number(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        // Get Hoodpay configuration
+        const hoodpayMethod = await db.getPaymentMethodByName('hoodpay');
+        if (!hoodpayMethod || !hoodpayMethod.enabled) {
+          throw new Error('Hoodpay no está habilitado');
+        }
+
+        const config = hoodpayMethod.config ? JSON.parse(hoodpayMethod.config) : {};
+        if (!config.api_key) {
+          throw new Error('Hoodpay no está configurado correctamente');
+        }
+
+        // Create order in Hoodpay
+        const { createHoodpayOrder } = await import('./hoodpay');
+        const hoodpayOrder = await createHoodpayOrder({
+          apiKey: config.api_key,
+          amount: input.totalAmount,
+          currency: 'USD', // Hoodpay works with USD
+          customerEmail: input.customerEmail,
+          customerName: input.customerName,
+          items: input.items,
+        });
+
+        // Create order in our database
+        const order = await db.createOrder({
+          customerId: undefined,
+          customerName: input.customerName || input.customerEmail,
+          customerEmail: input.customerEmail,
+          customerPhone: '',
+          items: JSON.stringify(input.items),
+          totalAmount: input.totalAmount,
+        });
+
+        return {
+          orderId: order.id,
+          hoodpayOrderId: hoodpayOrder.id,
+          paymentUrl: hoodpayOrder.payment_url,
+        };
+      }),
   }),
 
   orders: router({
