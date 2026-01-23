@@ -571,7 +571,7 @@ export async function getEnabledPaymentMethods(): Promise<PaymentMethod[]> {
   const db = await getDb();
   if (!db) return [];
 
-  const results = await db.select().from(paymentMethods).where(eq(paymentMethods.enabled, 1)).orderBy(paymentMethods.sortOrder);
+  const results = await db.select().from(paymentMethods).where(eq(paymentMethods.enabled, 1)).orderBy(paymentMethods.id);
   return results;
 }
 
