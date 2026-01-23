@@ -36,7 +36,10 @@ export async function runAutoMigrations() {
       }
     } catch (error: any) {
       // Si la tabla no existe, la query fallará
-      if (error.code === 'ER_NO_SUCH_TABLE' || error.errno === 1146) {
+      const errorCode = error.code || error.cause?.code;
+      const errorNum = error.errno || error.cause?.errno;
+      
+      if (errorCode === 'ER_NO_SUCH_TABLE' || errorNum === 1146) {
         console.log("[Auto-Migration] Table doesn't exist, creating it...");
         
         // Crear tabla
