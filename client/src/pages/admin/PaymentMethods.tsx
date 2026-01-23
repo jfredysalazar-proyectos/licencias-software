@@ -51,10 +51,11 @@ export default function PaymentMethods() {
       config.phone = formData.get("phone");
       config.message_template = formData.get("message_template");
     } else if (selectedMethod.name === "hoodpay") {
-      config.business_id = formData.get("business_id");
+      const businessId = formData.get("business_id");
+      config.business_id = businessId ? parseInt(businessId as string, 10) : undefined;
       config.api_key = formData.get("api_key");
       config.webhook_secret = formData.get("webhook_secret");
-      config.currency = formData.get("currency");
+      config.currency = formData.get("currency") || "USD";
       config.test_mode = formData.get("test_mode") === "on";
     }
 
