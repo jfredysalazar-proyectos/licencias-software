@@ -11,101 +11,59 @@ export async function runAutoMigrations() {
     
     console.log("[Auto-Migration] Checking payment_methods table...");
     
-    // Verificar si la tabla existe
-    const [tableExists] = await db.execute(sql`
-      SELECT COUNT(*) as count
-      FROM information_schema.tables 
-      WHERE table_schema = DATABASE() 
-      AND table_name = 'payment_methods'
-    `);
-    
-    if ((tableExists as any).count === 0) {
-      console.log("[Auto-Migration] Creating payment_methods table...");
+    // Verificar si la tabla existe con una query más simple
+    try {
+      await db.execute(sql`SELECT 1 FROM payment_methods LIMIT 1`);
+      console.log("[Auto-Migration] payment_methods table exists");
       
-      // Crear tabla
-      await db.execute(sql`
-        CREATE TABLE payment_methods (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          name VARCHAR(50) NOT NULL UNIQUE,
-          displayName VARCHAR(100) NOT NULL,
-          description TEXT,
-          enabled INT DEFAULT 0 NOT NULL,
-          config TEXT,
-          sortOrder INT DEFAULT 0 NOT NULL,
-          createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-          updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL
-        )
+      // Si llegamos aquí, la tabla existe. Verificar si tiene datos
+      const [countResult] = await db.execute(sql`
+        SELECT COUNT(*) as count FROM payment_methods
       `);
       
-      console.log("[Auto-Migration] Inserting default payment methods...");
+      const count = (countResult as any)?.count || 0;
       
-      // Insertar métodos por defecto
-      await db.execute(sql`
-        INSERT INTO payment_methods (name, displayName, description, enabled, config, sortOrder) VALUES
-        ('whatsapp', 'WhatsApp', 'Contacta por WhatsApp para completar tu compra', 1, '{"phone": ""}', 1),
-        ('hoodpay', 'Hoodpay (Crypto)', 'Paga con criptomonedas de forma segura', 0, '{"apiKey": "", "webhookSecret": ""}', 2)
-      `);
-      
-      console.log("[Auto-Migration] payment_methods table created successfully!");
-    } else {
-      console.log("[Auto-Migration] payment_methods table already exists");
-      
-      // Verificar y agregar columnas faltantes si es necesario
-      try {
-        // Verificar si existe la columna description
-        const [descColumn] = await db.execute(sql`
-          SELECT COUNT(*) as count
-          FROM information_schema.columns 
-          WHERE table_schema = DATABASE() 
-          AND table_name = 'payment_methods'
-          AND column_name = 'description'
+      if (count === 0) {
+        console.log("[Auto-Migration] Table is empty, inserting default payment methods...");
+        await db.execute(sql`
+          INSERT INTO payment_methods (name, displayName, enabled, config) VALUES
+          ('whatsapp', 'WhatsApp', 1, '{"phone": ""}'),
+          ('hoodpay', 'Hoodpay (Crypto)', 0, '{"apiKey": "", "webhookSecret": ""}')
+        `);
+        console.log("[Auto-Migration] Default payment methods inserted!");
+      } else {
+        console.log(`[Auto-Migration] Table has ${count} records, skipping seed`);
+      }
+    } catch (error: any) {
+      // Si la tabla no existe, la query fallará
+      if (error.code === 'ER_NO_SUCH_TABLE' || error.errno === 1146) {
+        console.log("[Auto-Migration] Table doesn't exist, creating it...");
+        
+        // Crear tabla
+        await db.execute(sql`
+          CREATE TABLE payment_methods (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(50) NOT NULL UNIQUE,
+            displayName VARCHAR(100) NOT NULL,
+            enabled INT DEFAULT 0 NOT NULL,
+            config TEXT,
+            createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+            updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL
+          )
         `);
         
-        if ((descColumn as any).count === 0) {
-          console.log("[Auto-Migration] Adding description column...");
-          await db.execute(sql`
-            ALTER TABLE payment_methods 
-            ADD COLUMN description TEXT AFTER displayName
-          `);
-        }
+        console.log("[Auto-Migration] Table created, inserting default payment methods...");
         
-        // Verificar si existe la columna sortOrder
-        const [sortColumn] = await db.execute(sql`
-          SELECT COUNT(*) as count
-          FROM information_schema.columns 
-          WHERE table_schema = DATABASE() 
-          AND table_name = 'payment_methods'
-          AND column_name = 'sortOrder'
+        // Insertar métodos por defecto
+        await db.execute(sql`
+          INSERT INTO payment_methods (name, displayName, enabled, config) VALUES
+          ('whatsapp', 'WhatsApp', 1, '{"phone": ""}'),
+          ('hoodpay', 'Hoodpay (Crypto)', 0, '{"apiKey": "", "webhookSecret": ""}')
         `);
         
-        if ((sortColumn as any).count === 0) {
-          console.log("[Auto-Migration] Adding sortOrder column...");
-          await db.execute(sql`
-            ALTER TABLE payment_methods 
-            ADD COLUMN sortOrder INT DEFAULT 0 NOT NULL AFTER config
-          `);
-        }
-        
-        console.log("[Auto-Migration] Table structure verified");
-        
-        // Verificar si la tabla tiene datos
-        const [countResult] = await db.execute(sql`
-          SELECT COUNT(*) as count FROM payment_methods
-        `);
-        
-        if ((countResult as any).count === 0) {
-          console.log("[Auto-Migration] Table is empty, inserting default payment methods...");
-          await db.execute(sql`
-            INSERT INTO payment_methods (name, displayName, enabled, config) VALUES
-            ('whatsapp', 'WhatsApp', 1, '{"phone": ""}'),
-            ('hoodpay', 'Hoodpay (Crypto)', 0, '{"apiKey": "", "webhookSecret": ""}')
-          `);
-          console.log("[Auto-Migration] Default payment methods inserted!");
-        } else {
-          console.log("[Auto-Migration] Table has data, skipping seed");
-        }
-      } catch (error) {
-        console.error("[Auto-Migration] Error updating table structure:", error);
+        console.log("[Auto-Migration] payment_methods table created and seeded successfully!");
+      } else {
+        throw error;
       }
     }
   } catch (error) {
