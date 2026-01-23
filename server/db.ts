@@ -556,7 +556,7 @@ export async function getAllPaymentMethods(): Promise<PaymentMethod[]> {
   const db = await getDb();
   if (!db) return [];
 
-  return await db.select().from(paymentMethods).orderBy(paymentMethods.sortOrder);
+  return await db.select().from(paymentMethods).orderBy(paymentMethods.id);
 }
 
 export async function getPaymentMethodByName(name: string): Promise<PaymentMethod | null> {
