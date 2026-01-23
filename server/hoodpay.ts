@@ -191,8 +191,13 @@ export async function createHoodpayOrder(params: {
 
   const apiUrl = 'https://api.hoodpay.io/v1/payments';
   
+  // Ensure business_id is a number (API requires int, not string)
+  const businessIdNum = typeof params.businessId === 'string' 
+    ? parseInt(params.businessId, 10) 
+    : params.businessId;
+  
   const requestBody = {
-    business_id: params.businessId,
+    business_id: businessIdNum,
     amount: params.amount,
     currency: params.currency,
     name: params.customerName || params.customerEmail,
