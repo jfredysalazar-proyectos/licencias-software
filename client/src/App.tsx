@@ -26,13 +26,15 @@ import Returns from "./pages/Returns";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import MyAccount from "./pages/MyAccount";
+import OrderSuccess from "./pages/OrderSuccess";
 
 function Router() {
   return (
     <Switch>
-      <Route path={"/"} component={Home} />
+       <Route path="/" component={Home} />
       <Route path="/producto/:slug" component={ProductDetail} />
       <Route path="/mis-pedidos" component={MyOrders} />
+      <Route path="/order-success" component={OrderSuccess} />
       
       {/* Customer Auth Routes */}
       <Route path="/login" component={Login} />
