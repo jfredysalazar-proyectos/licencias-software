@@ -148,7 +148,7 @@ export default function PaymentMethods() {
 
       {/* Configuration Dialog */}
       <Dialog open={configDialogOpen} onOpenChange={setConfigDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" overlayClassName="bg-black/30">
           <DialogHeader>
             <DialogTitle>Configurar {selectedMethod?.displayName}</DialogTitle>
             <DialogDescription>
