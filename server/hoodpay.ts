@@ -191,30 +191,46 @@ export async function createHoodpayOrder(params: {
 
   const apiUrl = 'https://api.hoodpay.io/v1/payments';
   
+  const requestBody = {
+    business_id: params.businessId,
+    amount: params.amount,
+    currency: params.currency,
+    name: params.customerName || params.customerEmail,
+    description: description,
+    customer_email: params.customerEmail,
+    redirect_url: `${process.env.FRONTEND_URL || 'https://licencias-software-production.up.railway.app'}/order-success`,
+    notify_url: `${process.env.BACKEND_URL || 'https://licencias-software-production.up.railway.app'}/api/webhooks/hoodpay`,
+  };
+  
+  console.log('[Hoodpay API] Sending request to:', apiUrl);
+  console.log('[Hoodpay API] Request body:', JSON.stringify(requestBody, null, 2));
+  
   const response = await fetch(apiUrl, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${params.apiKey}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      business_id: params.businessId,
-      amount: params.amount,
-      currency: params.currency,
-      name: params.customerName || params.customerEmail,
-      description: description,
-      customer_email: params.customerEmail,
-      redirect_url: `${process.env.FRONTEND_URL || 'https://licencias-software-production.up.railway.app'}/order-success`,
-      notify_url: `${process.env.BACKEND_URL || 'https://licencias-software-production.up.railway.app'}/api/webhooks/hoodpay`,
-    }),
+    body: JSON.stringify(requestBody),
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Unknown error' }));
+    const errorText = await response.text();
+    console.error('[Hoodpay API] Error response status:', response.status);
+    console.error('[Hoodpay API] Error response body:', errorText);
+    
+    let error;
+    try {
+      error = JSON.parse(errorText);
+    } catch {
+      error = { message: errorText || 'Unknown error' };
+    }
+    
     throw new Error(`Hoodpay API error: ${error.message || response.statusText}`);
   }
 
   const payment = await response.json();
+  console.log('[Hoodpay API] Success! Payment created:', payment.id);
   return {
     id: payment.id,
     payment_url: payment.checkout_url,

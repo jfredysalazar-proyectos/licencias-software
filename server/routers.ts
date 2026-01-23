@@ -147,6 +147,11 @@ export const appRouter = router({
         }
 
         const config = hoodpayMethod.config ? JSON.parse(hoodpayMethod.config) : {};
+        console.log('[Hoodpay Debug] Config from DB:', JSON.stringify(config, null, 2));
+        console.log('[Hoodpay Debug] api_key exists:', !!config.api_key);
+        console.log('[Hoodpay Debug] business_id exists:', !!config.business_id);
+        console.log('[Hoodpay Debug] business_id value:', config.business_id);
+        
         if (!config.api_key || !config.business_id) {
           throw new Error('Hoodpay no está configurado correctamente (falta API key o Business ID)');
         }
