@@ -70,7 +70,17 @@ export function serveStatic(app: Express) {
   const uploadsPath = path.resolve(process.cwd(), "uploads");
   app.use("/uploads", express.static(uploadsPath));
 
-  app.use(express.static(distPath));
+  // Disable cache for static files to ensure updates are served
+  app.use(express.static(distPath, {
+    maxAge: 0,
+    etag: false,
+    lastModified: false,
+    setHeaders: (res) => {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  }));
 
   // fall through to index.html if the file doesn't exist
   app.use("*", (_req, res) => {
