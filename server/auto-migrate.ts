@@ -87,6 +87,23 @@ export async function runAutoMigrations() {
         }
         
         console.log("[Auto-Migration] Table structure verified");
+        
+        // Verificar si la tabla tiene datos
+        const [countResult] = await db.execute(sql`
+          SELECT COUNT(*) as count FROM payment_methods
+        `);
+        
+        if ((countResult as any).count === 0) {
+          console.log("[Auto-Migration] Table is empty, inserting default payment methods...");
+          await db.execute(sql`
+            INSERT INTO payment_methods (name, displayName, enabled, config) VALUES
+            ('whatsapp', 'WhatsApp', 1, '{"phone": ""}'),
+            ('hoodpay', 'Hoodpay (Crypto)', 0, '{"apiKey": "", "webhookSecret": ""}')
+          `);
+          console.log("[Auto-Migration] Default payment methods inserted!");
+        } else {
+          console.log("[Auto-Migration] Table has data, skipping seed");
+        }
       } catch (error) {
         console.error("[Auto-Migration] Error updating table structure:", error);
       }
