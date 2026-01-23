@@ -147,14 +147,15 @@ export const appRouter = router({
         }
 
         const config = hoodpayMethod.config ? JSON.parse(hoodpayMethod.config) : {};
-        if (!config.api_key) {
-          throw new Error('Hoodpay no está configurado correctamente');
+        if (!config.api_key || !config.business_id) {
+          throw new Error('Hoodpay no está configurado correctamente (falta API key o Business ID)');
         }
 
         // Create order in Hoodpay
         const { createHoodpayOrder } = await import('./hoodpay');
         const hoodpayOrder = await createHoodpayOrder({
           apiKey: config.api_key,
+          businessId: config.business_id,
           amount: input.totalAmount,
           currency: 'USD', // Hoodpay works with USD
           customerEmail: input.customerEmail,

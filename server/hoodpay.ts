@@ -172,6 +172,7 @@ export function parseHoodpayWebhook(payload: any): HoodpayWebhookEvent {
  */
 export async function createHoodpayOrder(params: {
   apiKey: string;
+  businessId: string;
   amount: number;
   currency: string;
   customerEmail: string;
@@ -197,6 +198,7 @@ export async function createHoodpayOrder(params: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
+      business_id: params.businessId,
       amount: params.amount,
       currency: params.currency,
       name: params.customerName || params.customerEmail,
