@@ -14,6 +14,7 @@
     "fix-features": "tsx fix-features-field.ts",
     "migrate-payment-methods": "tsx run-payment-methods-migration.ts",
     "force-add-columns": "tsx server/force-add-columns.ts",
+    "seed-payment-methods": "tsx server/seed-payment-methods.ts",
     "format": "prettier --write .",
     "test": "vitest run",
     "db:push": "drizzle-kit generate && drizzle-kit migrate"
