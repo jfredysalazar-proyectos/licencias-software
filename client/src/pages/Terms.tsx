@@ -5,7 +5,7 @@ export default function Terms() {
       <div className="bg-gradient-to-r from-blue-900 to-blue-700 text-white py-12">
         <div className="container mx-auto px-4">
           <h1 className="text-4xl font-bold">Términos y Condiciones</h1>
-          <p className="text-blue-100 mt-2">Última actualización: Enero 2025</p>
+          <p className="text-blue-100 mt-2">Última actualización: Enero 2026</p>
         </div>
       </div>
 
