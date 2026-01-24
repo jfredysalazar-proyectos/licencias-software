@@ -120,7 +120,7 @@ export default function Terms() {
             Para preguntas sobre estos Términos y Condiciones, contáctanos:
           </p>
           <ul className="list-none text-gray-700 space-y-2">
-            <li>WhatsApp: +57 300 123 4567</li>
+            <li>WhatsApp: +57 333 431 5646</li>
             <li>Email: legal@licenciasdesoftware.org</li>
           </ul>
         </div>
