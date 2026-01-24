@@ -130,7 +130,7 @@ export default function OrderSuccess() {
               variant="outline"
               size="sm"
               onClick={() => {
-                const whatsappNumber = "573001234567"; // Reemplazar con número real
+                const whatsappNumber = "573334315646";
                 const message = "Hola, completé mi pago pero no he recibido las licencias";
                 window.open(
                   `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`,

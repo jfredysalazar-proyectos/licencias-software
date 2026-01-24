@@ -102,11 +102,11 @@ export default function AdminSettings() {
                   onChange={(e) =>
                     setFormData({ ...formData, whatsapp_number: e.target.value })
                   }
-                  placeholder="573001234567"
+                  placeholder="573334315646"
                   required
                 />
                 <p className="text-sm text-muted-foreground">
-                  Número con código de país sin +, ej: 573001234567
+                  Número con código de país sin +, ej: 573334315646
                 </p>
               </div>
 

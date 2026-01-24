@@ -3,7 +3,7 @@ import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function Footer() {
-  const whatsappNumber = "573001234567"; // Número de ejemplo
+  const whatsappNumber = "573334315646"; // Número de ejemplo
   const whatsappMessage = "Hola, tengo una consulta sobre las licencias de software";
 
   return (

@@ -25,7 +25,7 @@ export default function MyOrders() {
   );
 
   const handleWhatsAppCheckout = () => {
-    const whatsappNumber = "573001234567";
+    const whatsappNumber = "573334315646";
     let message = "¡Hola! Quiero comprar las siguientes licencias:\n\n";
 
     cart.forEach((item, index) => {

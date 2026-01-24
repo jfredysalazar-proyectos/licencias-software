@@ -48,7 +48,7 @@ export default function Home() {
     const customerDataStr = localStorage.getItem("customerData");
     const customerData = customerDataStr ? JSON.parse(customerDataStr) : null;
 
-    const whatsappNumber = config.phone || "573001234567";
+    const whatsappNumber = config.phone || "573334315646";
     let message = (config.message_template || "¡Hola! Quiero comprar las siguientes licencias:") + "\n\n";
 
     // Add customer info if logged in
@@ -345,7 +345,7 @@ export default function Home() {
               size="lg"
               variant="secondary"
               onClick={() => {
-                const whatsappNumber = config.phone || "573001234567";
+                const whatsappNumber = config.phone || "573334315646";
                 const message = "Hola, tengo una consulta sobre las licencias de software";
                 window.open(
                   `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`,

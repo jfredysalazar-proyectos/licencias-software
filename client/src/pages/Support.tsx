@@ -79,7 +79,7 @@ export default function Support() {
               Chat instantáneo con nuestro equipo
             </p>
             <a
-              href="https://wa.me/573001234567"
+              href="https://wa.me/573334315646"
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-600 hover:text-blue-700 font-semibold"
@@ -119,7 +119,7 @@ export default function Support() {
               Llamadas y mensajes disponibles
             </p>
             <a
-              href="tel:+573001234567"
+              href="tel:+573334315646"
               className="text-blue-600 hover:text-blue-700 font-semibold"
             >
               +57 300 123 4567
@@ -171,7 +171,7 @@ export default function Support() {
               Nuestro equipo de soporte está listo para ayudarte con cualquier pregunta
             </p>
             <a
-              href="https://wa.me/573001234567"
+              href="https://wa.me/573334315646"
               target="_blank"
               rel="noopener noreferrer"
             >

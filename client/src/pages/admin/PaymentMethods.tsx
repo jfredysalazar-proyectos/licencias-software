@@ -165,7 +165,7 @@ export default function PaymentMethods() {
                     id="phone"
                     name="phone"
                     type="tel"
-                    placeholder="+573001234567"
+                    placeholder="+573334315646"
                     defaultValue={
                       selectedMethod.config
                         ? JSON.parse(selectedMethod.config as string).phone
