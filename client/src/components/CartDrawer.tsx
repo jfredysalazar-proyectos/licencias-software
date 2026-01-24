@@ -44,10 +44,12 @@ export default function CartDrawer({ open, onClose, onCheckout }: CartDrawerProp
             <Button onClick={onClose}>Explorar Productos</Button>
           </div>
         ) : (
-          <div className="flex flex-col h-[calc(100vh-8rem)]">
-            <ScrollArea className="flex-1 -mx-6 px-6 my-6">
-              <div className="space-y-4">
-                {cart.map((item, index) => (
+          <div className="flex flex-col h-full">
+            {/* Products List with Scroll */}
+            <div className="flex-1 overflow-hidden">
+              <ScrollArea className="h-full -mx-6 px-6 my-6">
+                <div className="space-y-4 pb-4">
+                  {cart.map((item, index) => (
                   <div
                     key={`${item.product.id}-${index}`}
                     className="flex gap-4 p-4 rounded-lg border bg-card"
@@ -123,12 +125,13 @@ export default function CartDrawer({ open, onClose, onCheckout }: CartDrawerProp
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </ScrollArea>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
 
             {/* Footer - Always visible */}
-            <div className="border-t pt-4 space-y-4 mt-auto flex-shrink-0">
+            <div className="border-t pt-4 space-y-4 flex-shrink-0">
               <div className="flex items-center justify-between text-lg font-semibold">
                 <span>Total:</span>
                 <span className="text-primary">
