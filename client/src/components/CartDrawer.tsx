@@ -44,8 +44,8 @@ export default function CartDrawer({ open, onClose, onCheckout }: CartDrawerProp
             <Button onClick={onClose}>Explorar Productos</Button>
           </div>
         ) : (
-          <div className="flex flex-col h-full">
-            <ScrollArea className="flex-1 -mx-6 px-6 my-6 max-h-[calc(100vh-20rem)]">
+          <div className="flex flex-col h-[calc(100vh-8rem)]">
+            <ScrollArea className="flex-1 -mx-6 px-6 my-6">
               <div className="space-y-4">
                 {cart.map((item, index) => (
                   <div
