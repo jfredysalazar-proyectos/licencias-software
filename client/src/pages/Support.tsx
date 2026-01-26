@@ -1,6 +1,9 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Mail, MessageCircle, Phone, Clock } from "lucide-react";
+import { ChevronDown, ChevronUp, Mail, MessageCircle, Phone, Clock, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 interface FAQItem {
   question: string;
@@ -58,10 +61,18 @@ export default function Support() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
+    <div className="min-h-screen bg-white flex flex-col">
+      <Header />
+      
+      {/* Hero Section */}
       <div className="bg-gradient-to-r from-blue-900 to-blue-700 text-white py-12">
         <div className="container mx-auto px-4">
+          <Link href="/">
+            <Button variant="ghost" className="text-white hover:bg-white/10 mb-4">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Volver al inicio
+            </Button>
+          </Link>
           <h1 className="text-4xl font-bold mb-4">Centro de Ayuda</h1>
           <p className="text-xl text-blue-100">
             Encuentra respuestas a tus preguntas y obtén soporte técnico
@@ -70,7 +81,7 @@ export default function Support() {
       </div>
 
       {/* Contact Methods */}
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 py-12 flex-grow">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
             <MessageCircle className="w-8 h-8 text-blue-600 mb-4" />
@@ -122,7 +133,7 @@ export default function Support() {
               href="tel:+573334315646"
               className="text-blue-600 hover:text-blue-700 font-semibold"
             >
-              +57 300 123 4567
+              +57 333 431 5646
             </a>
           </div>
         </div>
@@ -182,6 +193,8 @@ export default function Support() {
           </div>
         </div>
       </div>
+      
+      <Footer />
     </div>
   );
 }
