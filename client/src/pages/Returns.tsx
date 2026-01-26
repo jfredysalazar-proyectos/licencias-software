@@ -1,19 +1,30 @@
-import { CheckCircle, AlertCircle, Clock, RefreshCw } from "lucide-react";
+import { CheckCircle, AlertCircle, Clock, RefreshCw, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 export default function Returns() {
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
+    <div className="min-h-screen bg-white flex flex-col">
+      <Header />
+      
+      {/* Hero Section */}
       <div className="bg-gradient-to-r from-blue-900 to-blue-700 text-white py-12">
         <div className="container mx-auto px-4">
+          <Link href="/">
+            <Button variant="ghost" className="text-white hover:bg-white/10 mb-4">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Volver al inicio
+            </Button>
+          </Link>
           <h1 className="text-4xl font-bold">Política de Devolución y Garantía</h1>
-          <p className="text-blue-100 mt-2">Última actualización: Enero 2025</p>
+          <p className="text-blue-100 mt-2">Última actualización: Enero 2026</p>
         </div>
       </div>
 
       {/* Content */}
-      <div className="container mx-auto px-4 py-12 max-w-3xl">
+      <div className="container mx-auto px-4 py-12 max-w-3xl flex-grow">
         {/* Guarantee Section */}
         <div className="bg-green-50 border border-green-200 rounded-lg p-8 mb-12">
           <div className="flex items-start gap-4">
@@ -225,6 +236,8 @@ export default function Returns() {
           </div>
         </div>
       </div>
+      
+      <Footer />
     </div>
   );
 }
