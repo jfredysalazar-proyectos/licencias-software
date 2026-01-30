@@ -30,7 +30,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             {product.imageUrl ? (
               <img
                 src={product.imageUrl}
-                alt={product.name}
+                alt={`Licencia ${product.name} - Comprar en LicenciasdeSoftware.org`}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 loading="lazy"
                 width="800"

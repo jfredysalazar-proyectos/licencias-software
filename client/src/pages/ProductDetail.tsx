@@ -14,6 +14,7 @@ import RelatedProductsCarousel from "@/components/RelatedProductsCarousel";
 import SocialProof from "@/components/SocialProof";
 import PurchaseNotification from "@/components/PurchaseNotification";
 import PlatformIcons from "@/components/PlatformIcons";
+import SEO from "@/components/SEO";
 import { toast } from "sonner";
 
 export default function ProductDetail() {
@@ -119,8 +120,44 @@ export default function ProductDetail() {
 
   const features = product.features ? JSON.parse(product.features) : [];
 
+  // Structured data for product
+  const structuredData = {
+    "@context": "https://schema.org/",
+    "@type": "Product",
+    "name": product.name,
+    "image": product.imageUrl || "https://licenciasdesoftware.org/logo.png",
+    "description": product.description,
+    "sku": product.slug,
+    "brand": {
+      "@type": "Brand",
+      "name": "LicenciasdeSoftware.org"
+    },
+    "offers": {
+      "@type": "Offer",
+      "url": `https://licenciasdesoftware.org/producto/${product.slug}`,
+      "priceCurrency": "COP",
+      "price": currentPrice || product.basePrice,
+      "availability": product.inStock === 1 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      "seller": {
+        "@type": "Organization",
+        "name": "LicenciasdeSoftware.org"
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
+      <SEO
+        title={`${product.name} - LicenciasdeSoftware.org`}
+        description={product.shortDescription || product.description.substring(0, 160)}
+        keywords={`${product.name}, licencia ${product.name}, comprar ${product.name}, ${product.name} Colombia`}
+        image={product.imageUrl || "https://licenciasdesoftware.org/logo.png"}
+        url={`/producto/${product.slug}`}
+        type="product"
+        price={currentPrice || product.basePrice}
+        availability={product.inStock === 1 ? 'instock' : 'outofstock'}
+        structuredData={structuredData}
+      />
       <Header onCartClick={() => setCartOpen(true)} />
 
       <main className="flex-1">
@@ -142,7 +179,7 @@ export default function ProductDetail() {
               {product.imageUrl ? (
                 <img
                   src={product.imageUrl}
-                  alt={product.name}
+                  alt={`Licencia ${product.name} - ${product.shortDescription || 'Software Original'}`}
                   className="w-full h-full object-cover"
                   loading="lazy"
                   width="800"

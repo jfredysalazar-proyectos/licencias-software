@@ -1,0 +1,14 @@
+# robots.txt para LicenciasdeSoftware.org
+
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /mi-cuenta/
+Disallow: /login
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://licenciasdesoftware.org/sitemap.xml
+
+# Crawl-delay (opcional, para evitar sobrecarga)
+Crawl-delay: 1

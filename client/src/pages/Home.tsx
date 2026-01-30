@@ -11,6 +11,7 @@ import Footer from "@/components/Footer";
 import PurchaseNotification from "@/components/PurchaseNotification";
 
 import WhyChooseUs from "@/components/WhyChooseUs";
+import SEO from "@/components/SEO";
 import { useCart } from "@/contexts/CartContext";
 
 export default function Home() {
@@ -132,8 +133,29 @@ export default function Home() {
     }
   };
 
+  // Organization structured data for homepage
+  const organizationSchema = {
+    "@context": "https://schema.org",
+    "@type": "Store",
+    "name": "LicenciasdeSoftware.org",
+    "description": "Tienda online de licencias originales de software en Colombia. Windows, Office, Adobe, AutoCAD y más. Entrega instantánea.",
+    "url": "https://licenciasdesoftware.org",
+    "telephone": "+57-333-431-5646",
+    "address": {
+      "@type": "PostalAddress",
+      "addressCountry": "CO"
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
+      <SEO
+        title="LicenciasdeSoftware.org - Licencias Originales de Software en Colombia"
+        description="Compra licencias originales de Windows, Office, Adobe, AutoCAD y más. Entrega instantánea por WhatsApp. Garantía 100% original. Los mejores precios en Colombia."
+        keywords="licencias software Colombia, Windows 11, Office 365, Adobe Creative Cloud, AutoCAD, licencias originales, software legal, licencias digitales"
+        url="/"
+        structuredData={organizationSchema}
+      />
       <Header onCartClick={() => setCartOpen(true)} />
 
       <main className="flex-1">
