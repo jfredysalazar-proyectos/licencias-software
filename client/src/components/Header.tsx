@@ -28,13 +28,14 @@ export default function Header({ onCartClick, onSearchClick }: HeaderProps) {
       {/* Main Header */}
       <div className="bg-card border-b border-border">
         <div className="container">
-          <div className="flex items-center justify-between h-20">
+          <div className="flex items-center justify-between h-20 md:h-24 lg:h-28">
             {/* Logo */}
             <Link href="/">
               <img 
                 src="/logo.png" 
                 alt="LicenciasdeSoftware.org" 
-                className="h-20 w-auto cursor-pointer hover:opacity-80 transition-opacity"
+                className="h-16 md:h-20 lg:h-24 w-auto cursor-pointer hover:opacity-80 transition-opacity"
+                style={{ imageRendering: '-webkit-optimize-contrast' }}
               />
             </Link>
 
