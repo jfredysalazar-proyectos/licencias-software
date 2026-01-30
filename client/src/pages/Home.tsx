@@ -136,7 +136,7 @@ export default function Home() {
     <div className="min-h-screen flex flex-col">
       <Header onCartClick={() => setCartOpen(true)} />
 
-      <main className="flex-1 -mt-8">
+      <main className="flex-1">
       {/* Hero Section */}
       <HeroSection />
 
