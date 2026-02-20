@@ -41,7 +41,9 @@ export default function SoldLicenses() {
   });
 
   const utils = trpc.useUtils();
-  const { data: licenses, isLoading } = trpc.admin.soldLicenses.list.useQuery();
+  const { data: licenses, isLoading, error: licensesError } = trpc.admin.soldLicenses.list.useQuery(undefined, {
+    retry: 1,
+  });
   const { data: products } = trpc.products.list.useQuery();
 
   const createMutation = trpc.admin.soldLicenses.create.useMutation({
@@ -185,6 +187,23 @@ Para renovar tu licencia o adquirir una nueva, contáctanos.
       <AdminLayout>
         <div className="p-8">
           <p>Cargando licencias...</p>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (licensesError) {
+    return (
+      <AdminLayout>
+        <div className="p-8">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-center gap-2 text-red-800">
+              <AlertCircle className="h-5 w-5" />
+              <h3 className="font-semibold">Error al cargar las licencias</h3>
+            </div>
+            <p className="text-red-600 mt-2 text-sm">{licensesError.message}</p>
+            <p className="text-red-500 mt-1 text-xs">Si el problema persiste, contacta al administrador del sistema.</p>
+          </div>
         </div>
       </AdminLayout>
     );

@@ -2,24 +2,44 @@ import { sql } from "drizzle-orm";
 import { getDb } from "./db";
 
 /**
- * Inicializa la tabla sold_licenses si no existe
- * Este script se ejecuta al iniciar la aplicación
+ * Inicializa la tabla sold_licenses si no existe.
+ * Este script se ejecuta al iniciar la aplicación como respaldo
+ * en caso de que las migraciones de Drizzle no hayan creado la tabla.
  */
 export async function initSoldLicensesTable() {
   try {
     const db = await getDb();
+    if (!db) {
+      console.warn("[initSoldLicensesTable] Base de datos no disponible, omitiendo inicialización");
+      return;
+    }
 
     console.log("[initSoldLicensesTable] Verificando si la tabla sold_licenses existe...");
 
     // Intentar consultar la tabla
     try {
-      const result = await db.execute(sql`SELECT COUNT(*) FROM sold_licenses LIMIT 1`);
+      await db.execute(sql`SELECT COUNT(*) FROM \`sold_licenses\` LIMIT 1`);
       console.log("[initSoldLicensesTable] ✓ La tabla sold_licenses ya existe");
       return;
     } catch (error: any) {
-      if (error.message && error.message.includes("doesn't exist")) {
+      // El error puede venir envuelto en DrizzleQueryError, verificar tanto el mensaje
+      // directo como el de la causa (error original de MySQL)
+      const errorMessage = error.message || "";
+      const causeMessage = error.cause?.message || error.cause?.sqlMessage || "";
+      const fullMessage = errorMessage + " " + causeMessage;
+
+      const isTableNotFound =
+        fullMessage.includes("doesn't exist") ||
+        fullMessage.includes("ER_NO_SUCH_TABLE") ||
+        error.code === "ER_NO_SUCH_TABLE" ||
+        error.cause?.code === "ER_NO_SUCH_TABLE" ||
+        error.errno === 1146 ||
+        error.cause?.errno === 1146;
+
+      if (isTableNotFound) {
         console.log("[initSoldLicensesTable] La tabla sold_licenses no existe, creándola...");
       } else {
+        console.error("[initSoldLicensesTable] Error inesperado al verificar tabla:", fullMessage);
         throw error;
       }
     }
