@@ -9,6 +9,7 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { runAutoMigrations } from "../auto-migrate";
 import { generateSitemap } from "../sitemap";
+import { initSoldLicensesTable } from "../init-sold-licenses-table";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -32,6 +33,9 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
   // Run auto-migrations first
   await runAutoMigrations();
+  
+  // Initialize sold_licenses table
+  await initSoldLicensesTable();
   
   const app = express();
   const server = createServer(app);
