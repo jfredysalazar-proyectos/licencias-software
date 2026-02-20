@@ -346,9 +346,24 @@ export default function AdminProducts() {
                     onChange={(e) =>
                       setFormData({ ...formData, description: e.target.value })
                     }
-                    rows={4}
+                    rows={12}
+                    className="font-mono text-sm"
+                    placeholder={`Escribe la descripción del producto. Soporta formato Markdown:
+
+## Título de sección
+
+**Texto en negrita** y *texto en cursiva*
+
+1. Elemento de lista numerada
+2. Otro elemento
+
+- Lista con viñetas
+- Otro punto`}
                     required
                   />
+                  <p className="text-xs text-muted-foreground">
+                    📝 Soporta formato <strong>Markdown</strong>: usa <code>## Título</code>, <code>**negrita**</code>, <code>1. listas numeradas</code>, <code>- viñetas</code>
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

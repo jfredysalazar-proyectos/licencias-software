@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { ArrowLeft, Check } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
@@ -252,9 +254,11 @@ export default function ProductDetail() {
 
               <div>
                 <h2 className="text-xl font-semibold mb-4">Descripción</h2>
-                <p className="text-muted-foreground leading-relaxed">
-                  {product.description}
-                </p>
+                <div className="prose prose-sm max-w-none text-muted-foreground prose-headings:text-foreground prose-headings:font-semibold prose-strong:text-foreground prose-ol:list-decimal prose-ul:list-disc prose-li:my-0.5 prose-p:leading-relaxed">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {product.description}
+                  </ReactMarkdown>
+                </div>
               </div>
 
               {features.length > 0 && (
