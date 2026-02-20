@@ -3,6 +3,7 @@ import { UNAUTHED_ERR_MSG } from '@shared/const';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink, TRPCClientError } from "@trpc/client";
 import { createRoot } from "react-dom/client";
+import superjson from "superjson";
 import App from "./App";
 import { getLoginUrl } from "./const";
 import "./index.css";
@@ -40,13 +41,7 @@ const trpcClient = trpc.createClient({
   links: [
     httpBatchLink({
       url: "/api/trpc",
-      transformer: {
-        serialize: (value: any) => JSON.parse(JSON.stringify(value, (key, val) => {
-          if (val instanceof Date) return val.toISOString();
-          return val;
-        })),
-        deserialize: (value: any) => value,
-      },
+      transformer: superjson,
       fetch(input, init) {
         // Get admin token and customer token from localStorage if exists
         const adminToken = localStorage.getItem('admin_token');

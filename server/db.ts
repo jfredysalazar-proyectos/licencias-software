@@ -529,21 +529,35 @@ export async function createSoldLicense(license: InsertSoldLicense): Promise<Sol
     updatedAt: license.updatedAt || now,
   };
 
-  console.log('[createSoldLicense] Aplicando solución de valores explícitos para evitar error de query con "default"');
+  console.log('[createSoldLicense] Datos recibidos:', {
+    expirationDateType: typeof insertData.expirationDate,
+    expirationDateValue: insertData.expirationDate,
+    expirationDateIsDate: insertData.expirationDate instanceof Date,
+  });
 
   let expirationDate: Date;
-  if (typeof insertData.expirationDate === 'string') {
+  if (insertData.expirationDate instanceof Date) {
+    // Si ya es un Date, usarlo directamente
+    expirationDate = insertData.expirationDate;
+  } else if (typeof insertData.expirationDate === 'string') {
+    // Si es un string, intentar parsearlo
     const parts = insertData.expirationDate.split('-');
-    if (parts.length === 3) {
+    if (parts.length === 3 && parts[0].length === 4) {
+      // Formato YYYY-MM-DD
       expirationDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
     } else {
+      // Intentar parsearlo como ISO string
       expirationDate = new Date(insertData.expirationDate);
     }
-  } else if (insertData.expirationDate instanceof Date) {
-    expirationDate = insertData.expirationDate;
   } else {
+    // Convertir a Date de cualquier otra forma
     expirationDate = new Date(insertData.expirationDate as any);
   }
+
+  console.log('[createSoldLicense] Fecha procesada:', {
+    expirationDate: expirationDate.toISOString(),
+    expirationDateLocal: expirationDate.toLocaleDateString(),
+  });
 
   const finalInsertData = {
     ...insertData,
