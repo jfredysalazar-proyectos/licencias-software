@@ -17,7 +17,8 @@
     "seed-payment-methods": "tsx server/seed-payment-methods.ts",
     "format": "prettier --write .",
     "test": "vitest run",
-    "db:push": "drizzle-kit generate && drizzle-kit migrate"
+    "db:push": "drizzle-kit generate && drizzle-kit migrate",
+    "migrate-sold-licenses": "tsx run-migration-sold-licenses.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.693.0",
