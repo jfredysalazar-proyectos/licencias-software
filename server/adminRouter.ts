@@ -602,15 +602,15 @@ export const adminRouter = router({
           productId: z.number(),
           productName: z.string(),
           licenseCode: z.string(),
-          expirationDate: z.string().refine((s) => /^\d{4}-\d{2}-\d{2}$/.test(s), { message: "Invalid date format, expected YYYY-MM-DD" }),
+          expirationDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Formato de fecha inválido, se espera YYYY-MM-DD"),
           notes: z.string().optional(),
         })
       )
       .mutation(async ({ input }) => {
         const licenseData = {
           ...input,
-          // Asegurar que expirationDate sea un objeto Date para Drizzle
-          expirationDate: new Date(input.expirationDate + 'T00:00:00Z'), // Añadir T00:00:00Z para asegurar que se interprete como UTC
+          // expirationDate ya debe ser un string YYYY-MM-DD desde el cliente
+          // No se convierte a Date aquí para evitar problemas de serialización de Drizzle
         };
         return db.createSoldLicense(licenseData);
       }),
@@ -625,7 +625,7 @@ export const adminRouter = router({
           productId: z.number().optional(),
           productName: z.string().optional(),
           licenseCode: z.string().optional(),
-          expirationDate: z.string().refine((s) => /^\d{4}-\d{2}-\d{2}$/.test(s), { message: "Invalid date format, expected YYYY-MM-DD" }).optional(),
+          expirationDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Formato de fecha inválido, se espera YYYY-MM-DD").optional(),
           notes: z.string().optional(),
         })
       )
@@ -633,7 +633,7 @@ export const adminRouter = router({
         const { id, ...data } = input;
         const updateData = {
           ...data,
-          expirationDate: data.expirationDate ? new Date(data.expirationDate + 'T00:00:00Z') : undefined,
+          expirationDate: data.expirationDate,
         };
         await db.updateSoldLicense(id, updateData);
         return { success: true };
