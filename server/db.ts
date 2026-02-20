@@ -531,7 +531,12 @@ export async function createSoldLicense(license: InsertSoldLicense): Promise<Sol
 
   console.log('[createSoldLicense] Aplicando solución de valores explícitos para evitar error de query con "default"');
 
-  const result = await db.insert(soldLicenses).values(insertData);
+  const formattedLicense = {
+    ...insertData,
+    expirationDate: insertData.expirationDate.toISOString().split('T')[0], // Formatear a YYYY-MM-DD
+  };
+
+  const result = await db.insert(soldLicenses).values(formattedLicense);
   const insertedId = Number(result[0].insertId);
   
   const created = await db.select().from(soldLicenses).where(eq(soldLicenses.id, insertedId));
