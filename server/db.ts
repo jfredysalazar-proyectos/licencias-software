@@ -533,7 +533,12 @@ export async function createSoldLicense(license: InsertSoldLicense): Promise<Sol
 
   let expirationDate: Date;
   if (typeof insertData.expirationDate === 'string') {
-    expirationDate = new Date(insertData.expirationDate);
+    const parts = insertData.expirationDate.split('-');
+    if (parts.length === 3) {
+      expirationDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    } else {
+      expirationDate = new Date(insertData.expirationDate);
+    }
   } else if (insertData.expirationDate instanceof Date) {
     expirationDate = insertData.expirationDate;
   } else {
@@ -547,7 +552,7 @@ export async function createSoldLicense(license: InsertSoldLicense): Promise<Sol
     updatedAt: insertData.updatedAt,
   };
 
-  console.log('[createSoldLicense] Insertando sold license:', { customerName: finalInsertData.customerName, expirationDate: expirationDate.toISOString() });
+  console.log('[createSoldLicense] Insertando sold license:', { customerName: finalInsertData.customerName, expirationDate: expirationDate.toISOString().split('T')[0] });
 
   const result = await db.insert(soldLicenses).values(finalInsertData);
   const insertedId = Number(result[0].insertId);

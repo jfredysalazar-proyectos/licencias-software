@@ -95,13 +95,19 @@ export default function SoldLicenses() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Asegurar que expirationDate es un string YYYY-MM-DD
+    const submitData = {
+      ...formData,
+      expirationDate: formData.expirationDate.toString(),
+    };
+
     if (editingLicense) {
       updateMutation.mutate({
         id: editingLicense.id,
-        ...formData,
+        ...submitData,
       });
     } else {
-      createMutation.mutate(formData);
+      createMutation.mutate(submitData);
     }
   };
 
