@@ -60,13 +60,19 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       updateSet.role = 'admin';
     }
 
+    const now = new Date();
     if (!values.lastSignedIn) {
-      values.lastSignedIn = new Date();
+      values.lastSignedIn = now;
     }
+    
+    // Asegurar valores explícitos para campos con DEFAULT
+    values.createdAt = user.createdAt || now;
+    values.updatedAt = user.updatedAt || now;
 
     if (Object.keys(updateSet).length === 0) {
-      updateSet.lastSignedIn = new Date();
+      updateSet.lastSignedIn = now;
     }
+    updateSet.updatedAt = now;
 
     await db.insert(users).values(values).onDuplicateKeyUpdate({
       set: updateSet,
@@ -146,7 +152,15 @@ export async function searchProducts(query: string): Promise<Product[]> {
 export async function createOrder(order: InsertOrder): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(orders).values(order);
+  
+  const now = new Date();
+  const insertData = {
+    ...order,
+    createdAt: order.createdAt || now,
+    updatedAt: order.updatedAt || now,
+  };
+  
+  const result = await db.insert(orders).values(insertData);
   return result[0].insertId;
 }
 
@@ -267,7 +281,15 @@ export async function deleteProduct(id: number): Promise<void> {
 export async function createCategory(category: InsertCategory): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(categories).values(category);
+  
+  const now = new Date();
+  const insertData = {
+    ...category,
+    createdAt: category.createdAt || now,
+    updatedAt: category.updatedAt || now,
+  };
+  
+  const result = await db.insert(categories).values(insertData);
   return result[0].insertId;
 }
 
@@ -310,7 +332,14 @@ export async function getAllUsers(): Promise<typeof users.$inferSelect[]> {
 export async function createCustomer(customer: InsertCustomer): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(customers).values(customer);
+  
+  const now = new Date();
+  const insertData = {
+    ...customer,
+    createdAt: customer.createdAt || now,
+  };
+  
+  const result = await db.insert(customers).values(insertData);
   return result[0].insertId;
 }
 
@@ -353,19 +382,18 @@ export async function createProductVariant(variant: InsertProductVariant): Promi
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  // Solo insertar campos explícitos, sin id ni createdAt (se manejan automáticamente)
-  // Fix: Evitar el error "Failed query: insert into product_variants with default values"
+  const now = new Date();
   const insertData = {
-    productId: variant.productId,
-    name: variant.name,
+    ...variant,
     position: variant.position ?? 0,
+    createdAt: variant.createdAt || now,
   };
   
   const result = await db.insert(productVariants).values(insertData);
   return { 
     ...insertData, 
     id: Number(result[0].insertId),
-    createdAt: new Date(),
+    createdAt: insertData.createdAt,
   } as ProductVariant;
 }
 
@@ -396,18 +424,18 @@ export async function createVariantOption(option: InsertVariantOption): Promise<
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  // Solo insertar campos explícitos, sin id ni createdAt (se manejan automáticamente)
+  const now = new Date();
   const insertData = {
-    variantId: option.variantId,
-    value: option.value,
+    ...option,
     position: option.position ?? 0,
+    createdAt: option.createdAt || now,
   };
   
   const result = await db.insert(variantOptions).values(insertData);
   return { 
     ...insertData, 
     id: Number(result[0].insertId),
-    createdAt: new Date(),
+    createdAt: insertData.createdAt,
   } as VariantOption;
 }
 
@@ -449,21 +477,20 @@ export async function createProductSku(sku: InsertProductSku): Promise<ProductSk
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  // Solo insertar campos explícitos, sin id, createdAt ni updatedAt (se manejan automáticamente)
+  const now = new Date();
   const insertData = {
-    productId: sku.productId,
-    sku: sku.sku,
-    variantCombination: sku.variantCombination,
-    price: sku.price,
+    ...sku,
     inStock: sku.inStock ?? 1,
+    createdAt: sku.createdAt || now,
+    updatedAt: sku.updatedAt || now,
   };
   
   const result = await db.insert(productSkus).values(insertData);
   return { 
     ...insertData, 
     id: Number(result[0].insertId),
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    createdAt: insertData.createdAt,
+    updatedAt: insertData.updatedAt,
   } as ProductSku;
 }
 
@@ -493,7 +520,18 @@ export async function createSoldLicense(license: InsertSoldLicense): Promise<Sol
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(soldLicenses).values(license);
+  // SOLUCIÓN DEFINITIVA: Siempre proporcionar valores explícitos para campos con DEFAULT
+  // Esto evita que Drizzle use la palabra clave 'default' que falla en algunos drivers de MySQL
+  const now = new Date();
+  const insertData = {
+    ...license,
+    createdAt: license.createdAt || now,
+    updatedAt: license.updatedAt || now,
+  };
+
+  console.log('[createSoldLicense] Aplicando solución de valores explícitos para evitar error de query con "default"');
+
+  const result = await db.insert(soldLicenses).values(insertData);
   const insertedId = Number(result[0].insertId);
   
   const created = await db.select().from(soldLicenses).where(eq(soldLicenses.id, insertedId));
