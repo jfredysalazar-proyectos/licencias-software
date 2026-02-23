@@ -77,9 +77,6 @@ export default function SoldLicenses() {
     setEditingLicense(null);
     setFormData(emptyForm);
     setShowForm(true);
-    setTimeout(() => {
-      document.getElementById("license-form-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 100);
   };
 
   const openEditForm = (license: any) => {
@@ -97,9 +94,6 @@ export default function SoldLicenses() {
       notes: license.notes || "",
     });
     setShowForm(true);
-    setTimeout(() => {
-      document.getElementById("license-form-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 100);
   };
 
   const closeForm = () => {
@@ -168,7 +162,7 @@ export default function SoldLicenses() {
               Gestiona las licencias vendidas y envía recordatorios a clientes
             </p>
           </div>
-          <Button onClick={openNewForm} className="flex items-center gap-2 shrink-0">
+          <Button type="button" onClick={openNewForm} className="flex items-center gap-2 shrink-0">
             <Plus className="h-4 w-4" />
             Nueva Licencia
           </Button>
