@@ -9,7 +9,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -94,6 +93,11 @@ export default function SoldLicenses() {
     setEditingLicense(null);
   };
 
+  const handleOpenNew = () => {
+    resetForm();
+    setDialogOpen(true);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const submitData = {
@@ -131,7 +135,7 @@ export default function SoldLicenses() {
   const handleProductChange = (productId: number) => {
     const product = products?.find((p) => p.id === productId);
     if (product) {
-      setFormData({ ...formData, productId: product.id, productName: product.name });
+      setFormData((prev) => ({ ...prev, productId: product.id, productName: product.name }));
     }
   };
 
@@ -169,124 +173,6 @@ Para renovar tu licencia o adquirir una nueva, contáctanos.
     return `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
   };
 
-  // Dialog form (shared between mobile and desktop)
-  const licenseDialog = (
-    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-      <DialogTrigger asChild>
-        <Button onClick={resetForm} className="shrink-0">
-          <Plus className="mr-2 h-4 w-4" />
-          <span className="hidden sm:inline">Nueva Licencia</span>
-          <span className="sm:hidden">Nueva</span>
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
-            {editingLicense ? "Editar Licencia" : "Registrar Nueva Licencia"}
-          </DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="customerName">Nombre del Cliente *</Label>
-              <Input
-                id="customerName"
-                value={formData.customerName}
-                onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="customerEmail">Correo Electrónico *</Label>
-              <Input
-                id="customerEmail"
-                type="email"
-                value={formData.customerEmail}
-                onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
-                required
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="customerWhatsapp">WhatsApp *</Label>
-            <Input
-              id="customerWhatsapp"
-              placeholder="+57 300 123 4567"
-              value={formData.customerWhatsapp}
-              onChange={(e) => setFormData({ ...formData, customerWhatsapp: e.target.value })}
-              required
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="product">Producto *</Label>
-            <select
-              id="product"
-              className="w-full border rounded-md p-2"
-              value={formData.productId}
-              onChange={(e) => handleProductChange(Number(e.target.value))}
-              required
-            >
-              <option value={0}>Seleccionar producto</option>
-              {products?.map((product) => (
-                <option key={product.id} value={product.id}>
-                  {product.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <Label htmlFor="licenseCode">Código de Licencia *</Label>
-            <Textarea
-              id="licenseCode"
-              value={formData.licenseCode}
-              onChange={(e) => setFormData({ ...formData, licenseCode: e.target.value })}
-              rows={3}
-              required
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="expirationDate">Fecha de Vencimiento *</Label>
-            <Input
-              id="expirationDate"
-              type="date"
-              value={formData.expirationDate}
-              onChange={(e) => setFormData({ ...formData, expirationDate: e.target.value })}
-              required
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="notes">Notas (Opcional)</Label>
-            <Textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              rows={3}
-              placeholder="Información adicional sobre la licencia..."
-            />
-          </div>
-
-          <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => { resetForm(); setDialogOpen(false); }}
-            >
-              Cancelar
-            </Button>
-            <Button type="submit">
-              {editingLicense ? "Actualizar" : "Registrar"}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-
   if (isLoading) {
     return (
       <AdminLayout>
@@ -317,6 +203,121 @@ Para renovar tu licencia o adquirir una nueva, contáctanos.
   return (
     <AdminLayout>
       <div className="p-4 sm:p-8">
+
+        {/* ── DIALOG (controlled, no DialogTrigger) ── */}
+        <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) { resetForm(); } setDialogOpen(open); }}>
+          <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                {editingLicense ? "Editar Licencia" : "Registrar Nueva Licencia"}
+              </DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="customerName">Nombre del Cliente *</Label>
+                  <Input
+                    id="customerName"
+                    value={formData.customerName}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, customerName: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="customerEmail">Correo Electrónico *</Label>
+                  <Input
+                    id="customerEmail"
+                    type="email"
+                    value={formData.customerEmail}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, customerEmail: e.target.value }))}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="customerWhatsapp">WhatsApp *</Label>
+                <Input
+                  id="customerWhatsapp"
+                  placeholder="+57 300 123 4567"
+                  value={formData.customerWhatsapp}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, customerWhatsapp: e.target.value }))}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="product">Producto *</Label>
+                <select
+                  id="product"
+                  className="w-full border rounded-md p-2"
+                  value={formData.productId}
+                  onChange={(e) => handleProductChange(Number(e.target.value))}
+                  required
+                >
+                  <option value={0}>Seleccionar producto</option>
+                  {products?.map((product) => (
+                    <option key={product.id} value={product.id}>
+                      {product.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <Label htmlFor="licenseCode">Código de Licencia *</Label>
+                <Textarea
+                  id="licenseCode"
+                  value={formData.licenseCode}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, licenseCode: e.target.value }))}
+                  rows={3}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="expirationDate">Fecha de Vencimiento *</Label>
+                <Input
+                  id="expirationDate"
+                  type="date"
+                  value={formData.expirationDate}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, expirationDate: e.target.value }))}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="notes">Notas (Opcional)</Label>
+                <Textarea
+                  id="notes"
+                  value={formData.notes}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
+                  rows={3}
+                  placeholder="Información adicional sobre la licencia..."
+                />
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => { resetForm(); setDialogOpen(false); }}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                >
+                  {createMutation.isPending || updateMutation.isPending
+                    ? "Guardando..."
+                    : editingLicense ? "Actualizar" : "Registrar"}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
           <div>
@@ -325,7 +326,11 @@ Para renovar tu licencia o adquirir una nueva, contáctanos.
               Gestiona las licencias vendidas y envía recordatorios a clientes
             </p>
           </div>
-          {licenseDialog}
+          <Button onClick={handleOpenNew} className="shrink-0">
+            <Plus className="mr-2 h-4 w-4" />
+            <span className="hidden sm:inline">Nueva Licencia</span>
+            <span className="sm:hidden">Nueva</span>
+          </Button>
         </div>
 
         {/* ── DESKTOP TABLE (hidden on mobile) ── */}
@@ -509,6 +514,7 @@ Para renovar tu licencia o adquirir una nueva, contáctanos.
             </div>
           )}
         </div>
+
       </div>
     </AdminLayout>
   );
