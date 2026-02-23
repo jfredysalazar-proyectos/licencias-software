@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Plus, Edit, Trash2, MessageCircle, Calendar, X, Save, ChevronDown, ChevronUp } from "lucide-react";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,6 +32,7 @@ const emptyForm: LicenseFormData = {
 };
 
 export default function SoldLicenses() {
+  const [, navigate] = useLocation();
   const [showForm, setShowForm] = useState(false);
   const [editingLicense, setEditingLicense] = useState<any | null>(null);
   const [formData, setFormData] = useState<LicenseFormData>(emptyForm);
@@ -80,20 +82,7 @@ export default function SoldLicenses() {
   };
 
   const openEditForm = (license: any) => {
-    setEditingLicense(license);
-    setFormData({
-      customerName: license.customerName,
-      customerEmail: license.customerEmail,
-      customerWhatsapp: license.customerWhatsapp,
-      productId: license.productId,
-      productName: license.productName,
-      licenseCode: license.licenseCode,
-      expirationDate: license.expirationDate
-        ? new Date(license.expirationDate).toISOString().split("T")[0]
-        : "",
-      notes: license.notes || "",
-    });
-    setShowForm(true);
+    navigate(`/admin/sold-licenses/${license.id}/edit`);
   };
 
   const closeForm = () => {
