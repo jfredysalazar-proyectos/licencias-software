@@ -98,17 +98,26 @@ export default function ProductPricing() {
         })
         .join("-");
 
-      // Check if SKU exists in database
+      // Check if SKU exists in database (only to recover the saved price)
+      // Always use the freshly generated SKU code to avoid stale/duplicate codes
       const existingSku = existingSkus?.find((sku) => {
-        const dbCombination = JSON.parse(sku.variantCombination);
-        return JSON.stringify(dbCombination) === JSON.stringify(combination);
+        try {
+          const dbCombination = JSON.parse(sku.variantCombination);
+          return JSON.stringify(dbCombination) === JSON.stringify(combination);
+        } catch {
+          return false;
+        }
       });
+
+      // Always generate a fresh, unique SKU code from current variant options
+      // Never reuse old SKU codes from DB to avoid duplicate key conflicts
+      const freshSku = `${product?.slug || "PROD"}-${skuCode}`;
 
       return {
         combination,
         combinationText,
-        price: existingSku?.price || product?.basePrice || 0,
-        sku: existingSku?.sku || `${product?.slug || "PROD"}-${skuCode}`,
+        price: existingSku?.price ?? product?.basePrice ?? 0,
+        sku: freshSku,
       };
     });
 
