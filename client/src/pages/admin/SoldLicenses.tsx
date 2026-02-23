@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { createPortal } from "react-dom";
-import { Plus, Edit, Trash2, MessageCircle, Calendar, AlertCircle, X } from "lucide-react";
+import { Plus, Edit, Trash2, MessageCircle, Calendar, X, Save, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,19 +19,21 @@ interface LicenseFormData {
   notes: string;
 }
 
+const emptyForm: LicenseFormData = {
+  customerName: "",
+  customerEmail: "",
+  customerWhatsapp: "",
+  productId: 0,
+  productName: "",
+  licenseCode: "",
+  expirationDate: "",
+  notes: "",
+};
+
 export default function SoldLicenses() {
-  const [modalOpen, setModalOpen] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [editingLicense, setEditingLicense] = useState<any | null>(null);
-  const [formData, setFormData] = useState<LicenseFormData>({
-    customerName: "",
-    customerEmail: "",
-    customerWhatsapp: "",
-    productId: 0,
-    productName: "",
-    licenseCode: "",
-    expirationDate: "",
-    notes: "",
-  });
+  const [formData, setFormData] = useState<LicenseFormData>(emptyForm);
 
   const utils = trpc.useUtils();
   const { data: licenses, isLoading, error: licensesError } = trpc.admin.soldLicenses.list.useQuery(undefined, {
@@ -44,7 +45,7 @@ export default function SoldLicenses() {
     onSuccess: () => {
       toast.success("Licencia registrada exitosamente");
       utils.admin.soldLicenses.list.invalidate();
-      closeModal();
+      closeForm();
     },
     onError: (error) => {
       toast.error(`Error: ${error.message}`);
@@ -55,7 +56,7 @@ export default function SoldLicenses() {
     onSuccess: () => {
       toast.success("Licencia actualizada exitosamente");
       utils.admin.soldLicenses.list.invalidate();
-      closeModal();
+      closeForm();
     },
     onError: (error) => {
       toast.error(`Error: ${error.message}`);
@@ -72,24 +73,16 @@ export default function SoldLicenses() {
     },
   });
 
-  const emptyForm: LicenseFormData = {
-    customerName: "",
-    customerEmail: "",
-    customerWhatsapp: "",
-    productId: 0,
-    productName: "",
-    licenseCode: "",
-    expirationDate: "",
-    notes: "",
-  };
-
-  const openNewModal = () => {
+  const openNewForm = () => {
     setEditingLicense(null);
     setFormData(emptyForm);
-    setModalOpen(true);
+    setShowForm(true);
+    setTimeout(() => {
+      document.getElementById("license-form-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
   };
 
-  const openEditModal = (license: any) => {
+  const openEditForm = (license: any) => {
     setEditingLicense(license);
     setFormData({
       customerName: license.customerName,
@@ -98,14 +91,19 @@ export default function SoldLicenses() {
       productId: license.productId,
       productName: license.productName,
       licenseCode: license.licenseCode,
-      expirationDate: license.expirationDate.split("T")[0],
+      expirationDate: license.expirationDate
+        ? new Date(license.expirationDate).toISOString().split("T")[0]
+        : "",
       notes: license.notes || "",
     });
-    setModalOpen(true);
+    setShowForm(true);
+    setTimeout(() => {
+      document.getElementById("license-form-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
   };
 
-  const closeModal = () => {
-    setModalOpen(false);
+  const closeForm = () => {
+    setShowForm(false);
     setEditingLicense(null);
     setFormData(emptyForm);
   };
@@ -150,381 +148,339 @@ export default function SoldLicenses() {
   const generateWhatsAppMessage = (license: any) => {
     const daysLeft = getDaysUntilExpiration(license.expirationDate);
     const expirationFormatted = new Date(license.expirationDate).toLocaleDateString("es-CO");
-    const message = `Hola ${license.customerName},
-
-Te recordamos que tu licencia de *${license.productName}* está próxima a vencer.
-
-📋 *Detalles de la licencia:*
-🔑 Código: ${license.licenseCode}
-📅 Fecha de vencimiento: ${expirationFormatted}
-⏰ Días restantes: ${daysLeft > 0 ? daysLeft : "VENCIDA"}
-
-Para renovar tu licencia o adquirir una nueva, contáctanos.
-
-¡Gracias por confiar en nosotros!`;
+    const message = `Hola ${license.customerName},\n\nTe recordamos que tu licencia de *${license.productName}* está próxima a vencer.\n\n📋 *Detalles de la licencia:*\n🔑 Código: ${license.licenseCode}\n📅 Fecha de vencimiento: ${expirationFormatted}\n⏰ Días restantes: ${daysLeft > 0 ? daysLeft : "VENCIDA"}\n\nPara renovar tu licencia o adquirir una nueva, contáctanos.\n\n¡Gracias por confiar en nosotros!`;
     const whatsappNumber = license.customerWhatsapp.replace(/[^0-9]/g, "");
     const encodedMessage = encodeURIComponent(message);
     return `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
   };
 
+  const isSaving = createMutation.isPending || updateMutation.isPending;
+
   return (
     <AdminLayout>
       <div className="p-4 sm:p-8">
 
-        {/* ── CUSTOM MODAL (portal to body to avoid overflow-auto clipping) ── */}
-        {modalOpen && createPortal(
+        {/* ── HEADER ── */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Licencias Vendidas</h1>
+            <p className="text-gray-500 mt-1 text-sm sm:text-base">
+              Gestiona las licencias vendidas y envía recordatorios a clientes
+            </p>
+          </div>
+          <Button onClick={openNewForm} className="flex items-center gap-2 shrink-0">
+            <Plus className="h-4 w-4" />
+            Nueva Licencia
+          </Button>
+        </div>
+
+        {/* ── INLINE FORM PANEL ── */}
+        {showForm && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+            id="license-form-section"
+            className="mb-6 border border-blue-200 rounded-xl bg-blue-50 shadow-sm"
           >
-            <div
-              className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Modal Header */}
-              <div className="flex items-center justify-between p-6 border-b">
-                <h2 className="text-lg font-semibold">
-                  {editingLicense ? "Editar Licencia" : "Registrar Nueva Licencia"}
-                </h2>
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="rounded-sm opacity-70 hover:opacity-100 transition-opacity"
-                >
-                  <X className="h-5 w-5" />
-                  <span className="sr-only">Cerrar</span>
-                </button>
-              </div>
+            {/* Form Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-blue-200 bg-blue-100 rounded-t-xl">
+              <h2 className="text-lg font-semibold text-blue-900">
+                {editingLicense ? "Editar Licencia" : "Nueva Licencia"}
+              </h2>
+              <button
+                type="button"
+                onClick={closeForm}
+                className="p-1 rounded-full hover:bg-blue-200 transition-colors"
+                aria-label="Cerrar formulario"
+              >
+                <X className="h-5 w-5 text-blue-700" />
+              </button>
+            </div>
 
-              {/* Modal Body */}
-              <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="customerName">Nombre del Cliente *</Label>
-                    <Input
-                      id="customerName"
-                      value={formData.customerName}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, customerName: e.target.value }))}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="customerEmail">Correo Electrónico *</Label>
-                    <Input
-                      id="customerEmail"
-                      type="email"
-                      value={formData.customerEmail}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, customerEmail: e.target.value }))}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="customerWhatsapp">WhatsApp *</Label>
+            {/* Form Body */}
+            <form onSubmit={handleSubmit} className="p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Nombre del cliente */}
+                <div className="space-y-1">
+                  <Label htmlFor="customerName">Nombre del Cliente *</Label>
                   <Input
-                    id="customerWhatsapp"
-                    placeholder="+57 300 123 4567"
-                    value={formData.customerWhatsapp}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, customerWhatsapp: e.target.value }))}
+                    id="customerName"
+                    value={formData.customerName}
+                    onChange={(e) => setFormData((p) => ({ ...p, customerName: e.target.value }))}
+                    placeholder="Nombre completo"
                     required
+                    className="bg-white"
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="product">Producto *</Label>
+                {/* Email */}
+                <div className="space-y-1">
+                  <Label htmlFor="customerEmail">Email del Cliente *</Label>
+                  <Input
+                    id="customerEmail"
+                    type="email"
+                    value={formData.customerEmail}
+                    onChange={(e) => setFormData((p) => ({ ...p, customerEmail: e.target.value }))}
+                    placeholder="correo@ejemplo.com"
+                    required
+                    className="bg-white"
+                  />
+                </div>
+
+                {/* WhatsApp */}
+                <div className="space-y-1">
+                  <Label htmlFor="customerWhatsapp">WhatsApp *</Label>
+                  <Input
+                    id="customerWhatsapp"
+                    value={formData.customerWhatsapp}
+                    onChange={(e) => setFormData((p) => ({ ...p, customerWhatsapp: e.target.value }))}
+                    placeholder="+573001234567"
+                    required
+                    className="bg-white"
+                  />
+                </div>
+
+                {/* Producto */}
+                <div className="space-y-1">
+                  <Label htmlFor="productId">Producto *</Label>
                   <select
-                    id="product"
-                    className="w-full border rounded-md p-2"
+                    id="productId"
                     value={formData.productId}
                     onChange={(e) => handleProductChange(Number(e.target.value))}
                     required
+                    className="w-full h-10 rounded-md border border-input bg-white px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   >
-                    <option value={0}>Seleccionar producto</option>
-                    {products?.map((product) => (
-                      <option key={product.id} value={product.id}>
-                        {product.name}
+                    <option value={0}>Seleccionar producto...</option>
+                    {products?.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
                       </option>
                     ))}
                   </select>
                 </div>
 
-                <div>
+                {/* Código de licencia */}
+                <div className="space-y-1">
                   <Label htmlFor="licenseCode">Código de Licencia *</Label>
-                  <Textarea
+                  <Input
                     id="licenseCode"
                     value={formData.licenseCode}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, licenseCode: e.target.value }))}
-                    rows={3}
+                    onChange={(e) => setFormData((p) => ({ ...p, licenseCode: e.target.value }))}
+                    placeholder="Código, usuario o clave de acceso"
                     required
+                    className="bg-white"
                   />
                 </div>
 
-                <div>
+                {/* Fecha de vencimiento */}
+                <div className="space-y-1">
                   <Label htmlFor="expirationDate">Fecha de Vencimiento *</Label>
                   <Input
                     id="expirationDate"
                     type="date"
                     value={formData.expirationDate}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, expirationDate: e.target.value }))}
+                    onChange={(e) => setFormData((p) => ({ ...p, expirationDate: e.target.value }))}
                     required
+                    className="bg-white"
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="notes">Notas (Opcional)</Label>
+                {/* Notas */}
+                <div className="space-y-1 sm:col-span-2">
+                  <Label htmlFor="notes">Notas adicionales</Label>
                   <Textarea
                     id="notes"
                     value={formData.notes}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
+                    onChange={(e) => setFormData((p) => ({ ...p, notes: e.target.value }))}
+                    placeholder="Instrucciones de instalación, credenciales adicionales, etc."
                     rows={3}
-                    placeholder="Información adicional sobre la licencia..."
+                    className="bg-white"
                   />
                 </div>
+              </div>
 
-                <div className="flex justify-end gap-2 pt-2">
-                  <Button type="button" variant="outline" onClick={closeModal}>
-                    Cancelar
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={createMutation.isPending || updateMutation.isPending}
-                  >
-                    {createMutation.isPending || updateMutation.isPending
-                      ? "Guardando..."
-                      : editingLicense ? "Actualizar" : "Registrar"}
-                  </Button>
-                </div>
-              </form>
-            </div>
+              {/* Form Actions */}
+              <div className="flex flex-col sm:flex-row gap-3 mt-6 pt-4 border-t border-blue-200">
+                <Button type="submit" disabled={isSaving} className="flex items-center gap-2">
+                  <Save className="h-4 w-4" />
+                  {isSaving ? "Guardando..." : editingLicense ? "Actualizar Licencia" : "Registrar Licencia"}
+                </Button>
+                <Button type="button" variant="outline" onClick={closeForm} className="bg-white">
+                  Cancelar
+                </Button>
+              </div>
+            </form>
           </div>
-        , document.body)}
+        )}
 
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold">Licencias Vendidas</h1>
-            <p className="text-gray-600 mt-1 text-sm sm:text-base">
-              Gestiona las licencias vendidas y envía recordatorios a clientes
-            </p>
-          </div>
-          <Button onClick={openNewModal} className="shrink-0">
-            <Plus className="mr-2 h-4 w-4" />
-            <span className="hidden sm:inline">Nueva Licencia</span>
-            <span className="sm:hidden">Nueva</span>
-          </Button>
-        </div>
-
-        {/* Loading / Error states */}
+        {/* ── LOADING / ERROR STATES ── */}
         {isLoading && (
-          <div className="p-4">
-            <p>Cargando licencias...</p>
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-3" />
+            <span className="text-gray-500">Cargando Licencias...</span>
           </div>
         )}
 
-        {licensesError && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-            <div className="flex items-center gap-2 text-red-800">
-              <AlertCircle className="h-5 w-5" />
-              <h3 className="font-semibold">Error al cargar las licencias</h3>
-            </div>
-            <p className="text-red-600 mt-2 text-sm">{licensesError.message}</p>
+        {licensesError && !isLoading && (
+          <div className="rounded-lg bg-red-50 border border-red-200 p-4 text-red-700 text-sm">
+            Error al cargar las licencias. Por favor recarga la página.
           </div>
         )}
 
-        {/* ── DESKTOP TABLE (hidden on mobile) ── */}
+        {/* ── DESKTOP TABLE ── */}
         {!isLoading && !licensesError && (
-          <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
+          <div className="hidden md:block rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">
-                      Cliente
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-44">
-                      Producto
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Código
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-36">
-                      Vencimiento
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">
-                      Estado
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
-                      Acciones
-                    </th>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-100 bg-gray-50">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Cliente</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Producto</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Código</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Vencimiento</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Estado</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {licenses && licenses.length > 0 ? (
-                    licenses.map((license) => {
-                      const daysLeft = getDaysUntilExpiration(license.expirationDate);
-                      return (
-                        <tr key={license.id} className="hover:bg-gray-50">
-                          <td className="px-4 py-4">
-                            <div className="text-sm font-medium text-gray-900 break-words">
-                              {license.customerName}
-                            </div>
-                            <div className="text-xs text-gray-500 break-all">{license.customerEmail}</div>
-                            <div className="text-xs text-gray-500">{license.customerWhatsapp}</div>
-                          </td>
-                          <td className="px-4 py-4">
-                            <div className="text-sm text-gray-900 break-words">{license.productName}</div>
-                          </td>
-                          <td className="px-4 py-4 max-w-[200px]">
-                            <div className="text-sm text-gray-900 font-mono break-all line-clamp-3">
-                              {license.licenseCode}
-                            </div>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <div className="flex items-center gap-1">
-                              <Calendar className="h-4 w-4 text-gray-400 shrink-0" />
-                              <span className="text-sm text-gray-900">
-                                {new Date(license.expirationDate).toLocaleDateString("es-CO")}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <span
-                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getExpirationBadgeColor(daysLeft)}`}
-                            >
-                              {daysLeft < 0 ? (
-                                <><AlertCircle className="h-3 w-3" />Vencida</>
-                              ) : (
-                                `${daysLeft} días`
-                              )}
-                            </span>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-right">
-                            <div className="flex justify-end gap-1">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => window.open(generateWhatsAppMessage(license), "_blank")}
-                                title="Enviar recordatorio por WhatsApp"
-                              >
-                                <MessageCircle className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => openEditModal(license)}
-                                title="Editar licencia"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleDelete(license.id)}
-                                title="Eliminar licencia"
-                              >
-                                <Trash2 className="h-4 w-4 text-red-600" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  ) : (
+                <tbody className="divide-y divide-gray-100">
+                  {licenses?.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                        No hay licencias registradas. Haz clic en "Nueva Licencia" para comenzar.
+                      <td colSpan={6} className="px-4 py-12 text-center text-gray-400">
+                        No hay licencias registradas aún.
                       </td>
                     </tr>
                   )}
+                  {licenses?.map((license) => {
+                    const days = getDaysUntilExpiration(license.expirationDate);
+                    return (
+                      <tr key={license.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3">
+                          <p className="font-medium text-gray-900">{license.customerName}</p>
+                          <p className="text-xs text-gray-500">{license.customerEmail}</p>
+                          <p className="text-xs text-gray-500">{license.customerWhatsapp}</p>
+                        </td>
+                        <td className="px-4 py-3 text-gray-700">{license.productName}</td>
+                        <td className="px-4 py-3">
+                          <span className="font-mono text-xs bg-gray-100 rounded px-2 py-1 break-all">
+                            {license.licenseCode}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className="flex items-center gap-1 text-gray-600">
+                            <Calendar className="h-3.5 w-3.5 shrink-0" />
+                            {new Date(license.expirationDate).toLocaleDateString("es-CO")}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${getExpirationBadgeColor(days)}`}>
+                            {days < 0 ? "Vencida" : `${days} días`}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-end gap-1">
+                            <a
+                              href={generateWhatsAppMessage(license)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title="Enviar recordatorio por WhatsApp"
+                              className="p-1.5 rounded hover:bg-green-50 text-green-600 transition-colors"
+                            >
+                              <MessageCircle className="h-4 w-4" />
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => openEditForm(license)}
+                              title="Editar licencia"
+                              className="p-1.5 rounded hover:bg-blue-50 text-blue-600 transition-colors"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(license.id)}
+                              title="Eliminar licencia"
+                              className="p-1.5 rounded hover:bg-red-50 text-red-500 transition-colors"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           </div>
         )}
 
-        {/* ── MOBILE CARDS (hidden on desktop) ── */}
+        {/* ── MOBILE CARDS ── */}
         {!isLoading && !licensesError && (
           <div className="md:hidden space-y-3">
-            {licenses && licenses.length > 0 ? (
-              licenses.map((license) => {
-                const daysLeft = getDaysUntilExpiration(license.expirationDate);
-                return (
-                  <div key={license.id} className="bg-white rounded-lg shadow p-4 space-y-3">
-                    {/* Customer + Status row */}
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="font-semibold text-gray-900 text-sm">{license.customerName}</p>
-                        <p className="text-xs text-gray-500 break-all">{license.customerEmail}</p>
-                        <p className="text-xs text-gray-500">{license.customerWhatsapp}</p>
-                      </div>
-                      <span
-                        className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${getExpirationBadgeColor(daysLeft)}`}
-                      >
-                        {daysLeft < 0 ? (
-                          <><AlertCircle className="h-3 w-3" />Vencida</>
-                        ) : (
-                          `${daysLeft} días`
-                        )}
+            {licenses?.length === 0 && (
+              <p className="text-center text-gray-400 py-12">No hay licencias registradas aún.</p>
+            )}
+            {licenses?.map((license) => {
+              const days = getDaysUntilExpiration(license.expirationDate);
+              return (
+                <div key={license.id} className="rounded-xl border border-gray-200 bg-white shadow-sm p-4">
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <div>
+                      <p className="font-semibold text-gray-900">{license.customerName}</p>
+                      <p className="text-xs text-gray-500">{license.customerEmail}</p>
+                      <p className="text-xs text-gray-500">{license.customerWhatsapp}</p>
+                    </div>
+                    <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ${getExpirationBadgeColor(days)}`}>
+                      {days < 0 ? "Vencida" : `${days} días`}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5 text-sm mb-3">
+                    <div className="flex gap-2">
+                      <span className="text-gray-400 w-20 shrink-0">Producto:</span>
+                      <span className="text-gray-700 font-medium">{license.productName}</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="text-gray-400 w-20 shrink-0">Código:</span>
+                      <span className="font-mono text-xs bg-gray-100 rounded px-1.5 py-0.5 break-all">{license.licenseCode}</span>
+                    </div>
+                    <div className="flex gap-2 items-center">
+                      <span className="text-gray-400 w-20 shrink-0">Vence:</span>
+                      <span className="flex items-center gap-1 text-gray-600">
+                        <Calendar className="h-3.5 w-3.5" />
+                        {new Date(license.expirationDate).toLocaleDateString("es-CO")}
                       </span>
                     </div>
-
-                    {/* Product */}
-                    <div>
-                      <span className="text-xs font-medium text-gray-400 uppercase">Producto</span>
-                      <p className="text-sm text-gray-900">{license.productName}</p>
-                    </div>
-
-                    {/* License code */}
-                    <div>
-                      <span className="text-xs font-medium text-gray-400 uppercase">Código</span>
-                      <p className="text-sm text-gray-900 font-mono break-all bg-gray-50 rounded p-2 mt-1">
-                        {license.licenseCode}
-                      </p>
-                    </div>
-
-                    {/* Expiration */}
-                    <div className="flex items-center gap-1 text-sm text-gray-700">
-                      <Calendar className="h-4 w-4 text-gray-400 shrink-0" />
-                      <span>Vence: {new Date(license.expirationDate).toLocaleDateString("es-CO")}</span>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex gap-2 pt-1 border-t border-gray-100">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="flex-1"
-                        onClick={() => window.open(generateWhatsAppMessage(license), "_blank")}
-                      >
-                        <MessageCircle className="h-4 w-4 mr-1" />
-                        WhatsApp
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="flex-1"
-                        onClick={() => openEditModal(license)}
-                      >
-                        <Edit className="h-4 w-4 mr-1" />
-                        Editar
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleDelete(license.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-red-600" />
-                      </Button>
-                    </div>
                   </div>
-                );
-              })
-            ) : (
-              <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
-                No hay licencias registradas. Toca "Nueva" para comenzar.
-              </div>
-            )}
+
+                  <div className="flex gap-2 pt-2 border-t border-gray-100">
+                    <a
+                      href={generateWhatsAppMessage(license)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium bg-green-50 text-green-700 hover:bg-green-100 transition-colors"
+                    >
+                      <MessageCircle className="h-3.5 w-3.5" />
+                      WhatsApp
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => openEditForm(license)}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+                    >
+                      <Edit className="h-3.5 w-3.5" />
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(license.id)}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Eliminar
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
 
