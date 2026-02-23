@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { Plus, Edit, Trash2, MessageCircle, Calendar, AlertCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -170,8 +171,8 @@ Para renovar tu licencia o adquirir una nueva, contáctanos.
     <AdminLayout>
       <div className="p-4 sm:p-8">
 
-        {/* ── CUSTOM MODAL ── */}
-        {modalOpen && (
+        {/* ── CUSTOM MODAL (portal to body to avoid overflow-auto clipping) ── */}
+        {modalOpen && createPortal(
           <div
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
             style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
@@ -297,7 +298,7 @@ Para renovar tu licencia o adquirir una nueva, contáctanos.
               </form>
             </div>
           </div>
-        )}
+        , document.body)}
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
