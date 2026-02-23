@@ -84,17 +84,26 @@ export default function ProductPricing() {
         })
         .join(" | ");
 
-      // Generate SKU code (sanitize: remove spaces and special chars)
+      // Generate SKU code: normalize accents, split into words, take first 3 chars of each word
+      // This ensures uniqueness even when option values share the same prefix (e.g. '1 Mes 1 Dispositivo' vs '1 Mes 4 Dispositivos')
+      const sanitizeOptionValue = (value: string): string => {
+        const normalized = (value || "XXX")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "") // remove accents
+          .replace(/[^a-zA-Z0-9\s]/g, "")  // remove special chars
+          .trim();
+        const words = normalized.split(/\s+/).filter(Boolean);
+        if (words.length === 1) {
+          return words[0].substring(0, 6).toUpperCase();
+        }
+        // Multiple words: take first 3 chars of each word (up to 3 words)
+        return words.slice(0, 3).map((w) => w.substring(0, 3)).join("").toUpperCase();
+      };
       const skuCode = variants
         .map((variant) => {
           const optionId = combination[variant.id];
           const option = variant.options.find((o) => o.id === optionId);
-          const sanitized = (option?.value || "XXX")
-            .replace(/\s+/g, "")
-            .replace(/[^a-zA-Z0-9]/g, "")
-            .substring(0, 4)
-            .toUpperCase() || "XXX";
-          return sanitized;
+          return sanitizeOptionValue(option?.value || "XXX");
         })
         .join("-");
 
