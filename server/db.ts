@@ -1,4 +1,4 @@
-import { eq, like, and, desc } from "drizzle-orm";
+import { eq, like, and, desc, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, categories, Category, InsertCategory, products, Product, InsertProduct, orders, Order, InsertOrder, admins, Admin, InsertAdmin, settings, Setting, InsertSetting, customers, Customer, InsertCustomer, productVariants, ProductVariant, InsertProductVariant, variantOptions, VariantOption, InsertVariantOption, productSkus, ProductSku, InsertProductSku, soldLicenses, SoldLicense, InsertSoldLicense, paymentMethods, PaymentMethod, InsertPaymentMethod } from "../drizzle/schema";
 import { ENV } from './_core/env';
@@ -485,7 +485,24 @@ export async function createProductSku(sku: InsertProductSku): Promise<ProductSk
     updatedAt: sku.updatedAt || now,
   };
   
-  const result = await db.insert(productSkus).values(insertData);
+  // Use INSERT ... ON DUPLICATE KEY UPDATE to handle existing SKUs gracefully
+  // This prevents Duplicate Key errors when the same SKU string already exists
+  const result = await db.insert(productSkus).values(insertData).onDuplicateKeyUpdate({
+    set: {
+      productId: insertData.productId,
+      variantCombination: insertData.variantCombination,
+      price: insertData.price,
+      inStock: insertData.inStock,
+      updatedAt: now,
+    },
+  });
+  
+  // If insertId is 0, the row was updated (duplicate), fetch it by sku string
+  if (Number(result[0].insertId) === 0) {
+    const existing = await db.select().from(productSkus).where(eq(productSkus.sku, insertData.sku!)).limit(1);
+    return existing[0] as ProductSku;
+  }
+  
   return { 
     ...insertData, 
     id: Number(result[0].insertId),
