@@ -84,12 +84,17 @@ export default function ProductPricing() {
         })
         .join(" | ");
 
-      // Generate SKU code
+      // Generate SKU code (sanitize: remove spaces and special chars)
       const skuCode = variants
         .map((variant) => {
           const optionId = combination[variant.id];
           const option = variant.options.find((o) => o.id === optionId);
-          return option?.value.substring(0, 3).toUpperCase() || "XXX";
+          const sanitized = (option?.value || "XXX")
+            .replace(/\s+/g, "")
+            .replace(/[^a-zA-Z0-9]/g, "")
+            .substring(0, 4)
+            .toUpperCase() || "XXX";
+          return sanitized;
         })
         .join("-");
 
@@ -122,12 +127,9 @@ export default function ProductPricing() {
 
     setIsSaving(true);
     try {
-      // Delete existing SKUs
-      if (existingSkus && existingSkus.length > 0) {
-        for (const sku of existingSkus) {
-          await utils.client.admin.skus.delete.mutate({ id: sku.id });
-        }
-      }
+      // Delete ALL existing SKUs for this product in one atomic operation
+      // This avoids stale cache issues and duplicate key errors
+      await utils.client.admin.skus.deleteByProductId.mutate({ productId: parseInt(productId) });
 
       // Create new SKUs
       for (const skuPrice of skuPrices) {

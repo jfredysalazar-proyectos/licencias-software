@@ -573,6 +573,13 @@ export const adminRouter = router({
         await db.deleteProductSku(input.id);
         return { success: true };
       }),
+
+    deleteByProductId: adminProcedure
+      .input(z.object({ productId: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteProductSkusByProductId(input.productId);
+        return { success: true };
+      }),
   }),
 
   // Sold Licenses Management
