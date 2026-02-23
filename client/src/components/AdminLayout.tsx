@@ -110,7 +110,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-y-auto" style={{height:"100vh"}}>
         <div className="container py-8">
           {children}
         </div>
