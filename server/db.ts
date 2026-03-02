@@ -595,12 +595,23 @@ export async function createSoldLicense(license: InsertSoldLicense): Promise<Sol
   return created[0];
 }
 
-export async function getAllSoldLicenses(): Promise<SoldLicense[]> {
+export async function getAllSoldLicenses(page?: number, pageSize?: number): Promise<{ items: SoldLicense[], total: number }> {
   const db = await getDb();
-  if (!db) return [];
+  if (!db) return { items: [], total: 0 };
 
-  // Order by expiration date ascending (soonest to expire first)
-  return db.select().from(soldLicenses).orderBy(soldLicenses.expirationDate);
+  const totalResult = await db.select({ count: sql<number>`count(*)` }).from(soldLicenses);
+  const total = Number(totalResult[0]?.count || 0);
+
+  let query = db.select().from(soldLicenses).orderBy(desc(soldLicenses.createdAt));
+
+  if (page !== undefined && pageSize !== undefined) {
+    const offset = (page - 1) * pageSize;
+    // @ts-ignore - Drizzle limit/offset types can be tricky with MySQL
+    query = query.limit(pageSize).offset(offset);
+  }
+
+  const items = await query;
+  return { items, total };
 }
 
 export async function getSoldLicenseById(id: number): Promise<SoldLicense | null> {

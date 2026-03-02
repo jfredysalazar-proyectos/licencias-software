@@ -10,7 +10,8 @@ export default function AdminDashboard() {
   const { data: categories } = trpc.admin.categories.list.useQuery();
   const { data: orders } = trpc.admin.orders.list.useQuery();
   const { data: users } = trpc.admin.users.list.useQuery();
-  const { data: licenses } = trpc.admin.soldLicenses.list.useQuery();
+  const { data: licensesData } = trpc.admin.soldLicenses.list.useQuery({ page: 1, pageSize: 1000 });
+  const licenses = licensesData?.items || [];
   const { data: expiringSoon } = trpc.admin.soldLicenses.getExpiringSoon.useQuery({ days: 30 });
 
   const stats = [

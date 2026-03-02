@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Edit, Trash2, MessageCircle, Calendar, X, Save, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Edit, Trash2, MessageCircle, Calendar, X, Save, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from "lucide-react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,11 +36,20 @@ export default function SoldLicenses() {
   const [showForm, setShowForm] = useState(false);
   const [editingLicense, setEditingLicense] = useState<any | null>(null);
   const [formData, setFormData] = useState<LicenseFormData>(emptyForm);
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
 
   const utils = trpc.useUtils();
-  const { data: licenses, isLoading, error: licensesError } = trpc.admin.soldLicenses.list.useQuery(undefined, {
+  const { data: licensesData, isLoading, error: licensesError } = trpc.admin.soldLicenses.list.useQuery({
+    page,
+    pageSize,
+  }, {
     retry: 1,
   });
+
+  const licenses = licensesData?.items || [];
+  const totalItems = licensesData?.total || 0;
+  const totalPages = Math.ceil(totalItems / pageSize);
   const { data: products } = trpc.products.list.useQuery();
 
   const createMutation = trpc.admin.soldLicenses.create.useMutation({
@@ -398,10 +407,10 @@ export default function SoldLicenses() {
         {/* ── MOBILE CARDS ── */}
         {!isLoading && !licensesError && (
           <div className="md:hidden space-y-3">
-            {licenses?.length === 0 && (
+            {licenses.length === 0 && (
               <p className="text-center text-gray-400 py-12">No hay licencias registradas aún.</p>
             )}
-            {licenses?.map((license) => {
+            {licenses.map((license) => {
               const days = getDaysUntilExpiration(license.expirationDate);
               return (
                 <div key={license.id} className="rounded-xl border border-gray-200 bg-white shadow-sm p-4">
@@ -464,6 +473,50 @@ export default function SoldLicenses() {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* ── PAGINATION ── */}
+        {!isLoading && !licensesError && totalPages > 1 && (
+          <div className="flex items-center justify-between mt-6 px-1">
+            <div className="text-sm text-gray-500">
+              Mostrando <span className="font-medium">{((page - 1) * pageSize) + 1}</span> a{" "}
+              <span className="font-medium">{Math.min(page * pageSize, totalItems)}</span> de{" "}
+              <span className="font-medium">{totalItems}</span> resultados
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="h-8 w-8 p-0"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                  <Button
+                    key={p}
+                    variant={page === p ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setPage(p)}
+                    className={`h-8 w-8 p-0 ${page === p ? "pointer-events-none" : ""}`}
+                  >
+                    {p}
+                  </Button>
+                ))}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="h-8 w-8 p-0"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         )}
 

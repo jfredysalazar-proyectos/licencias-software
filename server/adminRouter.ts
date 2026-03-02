@@ -584,9 +584,18 @@ export const adminRouter = router({
 
   // Sold Licenses Management
   soldLicenses: router({
-    list: adminProcedure.query(async () => {
-      return db.getAllSoldLicenses();
-    }),
+    list: adminProcedure
+      .input(
+        z.object({
+          page: z.number().min(1).optional().default(1),
+          pageSize: z.number().min(1).optional().default(10),
+        }).optional()
+      )
+      .query(async ({ input }) => {
+        const page = input?.page ?? 1;
+        const pageSize = input?.pageSize ?? 10;
+        return db.getAllSoldLicenses(page, pageSize);
+      }),
 
     getById: adminProcedure
       .input(z.object({ id: z.number() }))
