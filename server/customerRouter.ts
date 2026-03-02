@@ -157,6 +157,8 @@ export const customerRouter = router({
       email: ctx.customer.email,
       name: ctx.customer.name,
       phone: ctx.customer.phone,
+      role: ctx.customer.role,
+      balance: ctx.customer.balance,
       createdAt: ctx.customer.createdAt,
     };
   }),

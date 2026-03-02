@@ -243,6 +243,7 @@ export async function createProduct(product: InsertProduct): Promise<number> {
     shortDescription: product.shortDescription,
     categoryId: product.categoryId,
     basePrice: product.basePrice,
+    resellerPrice: product.resellerPrice,
     imageUrl: product.imageUrl,
     featured: product.featured !== undefined ? product.featured : 0,
     inStock: product.inStock !== undefined ? product.inStock : 1,
@@ -342,15 +343,14 @@ export async function createCustomer(customer: InsertCustomer): Promise<number> 
   const result = await db.insert(customers).values(insertData);
   return result[0].insertId;
 }
-
-export async function getCustomerByEmail(email: string): Promise<Customer | undefined> {
+export async function getCustomerByEmail(email: string) {
   const db = await getDb();
   if (!db) return undefined;
   const result = await db.select().from(customers).where(eq(customers.email, email)).limit(1);
   return result[0];
 }
 
-export async function getCustomerById(id: number): Promise<Customer | undefined> {
+export async function getCustomerById(id: number) {
   const db = await getDb();
   if (!db) return undefined;
   const result = await db.select().from(customers).where(eq(customers.id, id)).limit(1);
@@ -359,8 +359,28 @@ export async function getCustomerById(id: number): Promise<Customer | undefined>
 
 export async function updateCustomerLastLogin(id: number): Promise<void> {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  if (!db) return;
   await db.update(customers).set({ lastLogin: new Date() }).where(eq(customers.id, id));
+}
+
+export async function getAllCustomers(): Promise<Customer[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(customers).orderBy(desc(customers.createdAt));
+}
+
+export async function updateCustomerBalance(id: number, amount: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(customers).set({ 
+    balance: sql`${customers.balance} + ${amount}` 
+  }).where(eq(customers.id, id));
+}
+
+export async function updateCustomerRole(id: number, role: "customer" | "reseller"): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(customers).set({ role }).where(eq(customers.id, id));
 }
 
 export async function getCustomerOrders(customerId: number): Promise<Order[]> {

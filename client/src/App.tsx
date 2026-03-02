@@ -28,6 +28,8 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import MyAccount from "./pages/MyAccount";
 import OrderSuccess from "./pages/OrderSuccess";
+import Reseller from "./pages/Reseller";
+import ResellersAdmin from "./pages/admin/Resellers";
 
 function Router() {
   return (
@@ -41,6 +43,9 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/registro" component={Register} />
       <Route path="/mi-cuenta" component={MyAccount} />
+      
+      {/* Reseller Portal */}
+      <Route path="/reseller" component={Reseller} />
       
       {/* Legal & Support Routes */}
       <Route path="/soporte" component={Support} />
@@ -57,6 +62,7 @@ function Router() {
       <Route path="/admin/categories" component={AdminCategories} />
       <Route path="/admin/orders" component={AdminOrders} />
       <Route path="/admin/customers" component={AdminCustomers} />
+      <Route path="/admin/resellers" component={ResellersAdmin} />
       <Route path="/admin/settings" component={AdminSettings} />
       <Route path="/admin/sold-licenses" component={AdminSoldLicenses} />
       <Route path="/admin/sold-licenses/:id/edit" component={AdminSoldLicenseEdit} />

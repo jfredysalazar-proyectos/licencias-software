@@ -16,7 +16,8 @@ export const users = mysqlTable("users", {
   name: text("name"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  role: mysqlEnum("role", ["user", "admin", "reseller"]).default("user").notNull(),
+  balance: int("balance").default(0).notNull(), // Balance in COP
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
@@ -35,6 +36,8 @@ export const customers = mysqlTable("customers", {
   name: varchar("name", { length: 200 }),
   phone: varchar("phone", { length: 50 }),
   active: int("active").default(1).notNull(), // 0 or 1 for boolean
+  role: mysqlEnum("role", ["customer", "reseller"]).default("customer").notNull(),
+  balance: int("balance").default(0).notNull(), // Balance in COP
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   lastLogin: timestamp("lastLogin"),
 });
@@ -69,6 +72,7 @@ export const products = mysqlTable("products", {
   shortDescription: varchar("shortDescription", { length: 300 }),
   categoryId: int("categoryId").notNull(),
   basePrice: int("basePrice").notNull(), // Price in COP
+  resellerPrice: int("resellerPrice"), // Price for resellers in COP
   imageUrl: text("imageUrl"),
   featured: int("featured").notNull(), // 0 or 1 for boolean
   inStock: int("inStock").notNull(), // 0 or 1 for boolean

@@ -6,12 +6,14 @@ import { z } from "zod";
 import * as db from "./db";
 import { adminRouter } from "./adminRouter";
 import { customerRouter } from "./customerRouter";
+import { resellerRouter } from "./resellerRouter";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
   admin: adminRouter,
   customer: customerRouter,
+  reseller: resellerRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {

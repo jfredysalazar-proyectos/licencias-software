@@ -223,6 +223,7 @@ export const adminRouter = router({
           shortDescription: z.string().optional(),
           categoryId: z.number(),
           basePrice: z.number().min(0),
+          resellerPrice: z.number().min(0).optional(),
           imageUrl: z.string().optional(),
           featured: z.number().min(0).max(1).default(0),
           inStock: z.number().min(0).max(1).default(1),
@@ -245,6 +246,7 @@ export const adminRouter = router({
           shortDescription: z.string().optional(),
           categoryId: z.number().optional(),
           basePrice: z.number().min(0).optional(),
+          resellerPrice: z.number().min(0).optional(),
           imageUrl: z.string().optional(),
           featured: z.number().min(0).max(1).optional(),
           inStock: z.number().min(0).max(1).optional(),
@@ -333,6 +335,23 @@ export const adminRouter = router({
   users: router({
     list: adminProcedure.query(async () => {
       return await db.getAllUsers();
+    }),
+    customers: router({
+      list: adminProcedure.query(async () => {
+        return await db.getAllCustomers();
+      }),
+      updateBalance: adminProcedure
+        .input(z.object({ id: z.number(), amount: z.number() }))
+        .mutation(async ({ input }) => {
+          await db.updateCustomerBalance(input.id, input.amount);
+          return { success: true };
+        }),
+      updateRole: adminProcedure
+        .input(z.object({ id: z.number(), role: z.enum(["customer", "reseller"]) }))
+        .mutation(async ({ input }) => {
+          await db.updateCustomerRole(input.id, input.role);
+          return { success: true };
+        }),
     }),
   }),
 
