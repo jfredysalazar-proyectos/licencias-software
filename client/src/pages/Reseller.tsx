@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShoppingCart, LogOut, Menu, X, ChevronLeft, ChevronRight, Info } from "lucide-react";
 import { toast } from "sonner";
+import { trpc } from "@/lib/trpc";
 
 interface ResellerUser {
   id: number;
@@ -51,97 +52,79 @@ export default function Reseller() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingState, setIsLoadingState] = useState(false);
 
-  // Load products
-  useEffect(() => {
-    const loadProducts = async () => {
-      try {
-        const response = await fetch("/api/trpc/products.list");
-        const data = await response.json();
-        if (data.result?.data) {
-          setProducts(data.result.data);
-        }
-      } catch (error) {
-        console.error("Error loading products:", error);
-      }
-    };
-    loadProducts();
-  }, []);
-
-  // Check if user is already logged in
-  useEffect(() => {
-    const token = localStorage.getItem("resellerToken");
-    if (token) {
-      checkAuth(token);
+  // Mutations and Queries
+  const registerMutation = trpc.customer.register.useMutation({
+    onSuccess: (data) => {
+      localStorage.setItem("resellerToken", data.token);
+      setUser(data.customer as any);
+      setIsAuthenticated(true);
+      toast.success("¡Cuenta creada exitosamente!");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al registrarse");
     }
-  }, []);
+  });
 
-  const checkAuth = async (token: string) => {
-    try {
-      const response = await fetch("/api/trpc/customer.me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await response.json();
-      if (data.result?.data) {
-        setUser(data.result.data);
-        setIsAuthenticated(true);
-      }
-    } catch (error) {
-      console.error("Auth check failed:", error);
+  const loginMutation = trpc.customer.login.useMutation({
+    onSuccess: (data) => {
+      localStorage.setItem("resellerToken", data.token);
+      setUser(data.customer as any);
+      setIsAuthenticated(true);
+      toast.success("¡Bienvenido!");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al iniciar sesión");
+    }
+  });
+
+  const meQuery = trpc.customer.me.useQuery(undefined, {
+    enabled: !!localStorage.getItem("resellerToken"),
+    retry: false,
+    onSuccess: (data) => {
+      setUser(data as any);
+      setIsAuthenticated(true);
+    },
+    onError: () => {
       localStorage.removeItem("resellerToken");
     }
-  };
+  });
+
+  const productsQuery = trpc.products.list.useQuery(undefined, {
+    onSuccess: (data) => {
+      setProducts(data as any);
+    }
+  });
+
+  const createOrderMutation = trpc.reseller.createOrder.useMutation({
+    onSuccess: (data) => {
+      if (data.success && user) {
+        setUser({
+          ...user,
+          balance: user.balance - totalPrice,
+        });
+        toast.success(data.message);
+        setCart([]);
+        setShowCart(false);
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al procesar el pedido");
+    }
+  });
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    try {
-      const response = await fetch("/api/trpc/customer.login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await response.json();
-      if (data.result?.data?.token) {
-        localStorage.setItem("resellerToken", data.result.data.token);
-        setUser(data.result.data.customer);
-        setIsAuthenticated(true);
-        toast.success("¡Bienvenido!");
-      } else {
-        toast.error(data.error?.message || "Error al iniciar sesión");
-      }
-    } catch (error) {
-      toast.error("Error de conexión");
-    } finally {
-      setIsLoading(false);
-    }
+    loginMutation.mutate({ email, password });
   };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    try {
-      const response = await fetch("/api/trpc/customer.register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, name, phone }),
-      });
-      const data = await response.json();
-      if (data.result?.data?.token) {
-        localStorage.setItem("resellerToken", data.result.data.token);
-        setUser(data.result.data.customer);
-        setIsAuthenticated(true);
-        toast.success("¡Cuenta creada exitosamente!");
-      } else {
-        toast.error(data.error?.message || "Error al registrarse");
-      }
-    } catch (error) {
-      toast.error("Error de conexión");
-    } finally {
-      setIsLoading(false);
-    }
+    registerMutation.mutate({ email, password, name, phone });
   };
+
+  const isLoading = isLoadingState || registerMutation.isLoading || loginMutation.isLoading || createOrderMutation.isLoading;
 
   const handleLogout = () => {
     localStorage.removeItem("resellerToken");
@@ -206,40 +189,11 @@ export default function Reseller() {
       return;
     }
 
-    setIsLoading(true);
-    try {
-      const token = localStorage.getItem("resellerToken");
-      const response = await fetch("/api/trpc/reseller.createOrder", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          customerId: user.id,
-          items: cart,
-          totalAmount: totalPrice,
-        }),
-      });
-
-      const data = await response.json();
-      if (data.result?.data?.success) {
-        setUser({
-          ...user,
-          balance: user.balance - totalPrice,
-        });
-        toast.success(data.result.data.message);
-        setCart([]);
-        setShowCart(false);
-      } else {
-        toast.error(data.error?.message || "Error al procesar el pedido");
-      }
-    } catch (error) {
-      console.error("Checkout error:", error);
-      toast.error("Error al procesar el pedido");
-    } finally {
-      setIsLoading(false);
-    }
+    createOrderMutation.mutate({
+      customerId: user.id,
+      items: cart as any,
+      totalAmount: totalPrice,
+    });
   };
 
   // Pagination
