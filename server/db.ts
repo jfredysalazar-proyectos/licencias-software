@@ -338,6 +338,9 @@ export async function createCustomer(customer: InsertCustomer): Promise<number> 
   const insertData = {
     ...customer,
     createdAt: customer.createdAt || now,
+    role: customer.role || 'customer',
+    balance: customer.balance || 0,
+    active: customer.active !== undefined ? customer.active : 1,
   };
   
   const result = await db.insert(customers).values(insertData);
