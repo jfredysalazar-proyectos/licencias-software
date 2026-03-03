@@ -79,6 +79,7 @@ export const products = mysqlTable("products", {
   features: text("features"), // JSON string of features array
   platforms: text("platforms"), // JSON string of platforms array: ["windows", "macos", "android", "ios", "linux"]
   orderType: varchar("orderType", { length: 20 }).notNull().default("instant"), // 'instant' or 'on-demand'
+  showInReseller: int("showInReseller").notNull().default(0), // 0 or 1 - whether to show in reseller store
   createdAt: timestamp("createdAt").notNull().$defaultFn(() => new Date()),
   updatedAt: timestamp("updatedAt").notNull().$defaultFn(() => new Date()),
 });

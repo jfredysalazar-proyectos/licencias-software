@@ -230,6 +230,7 @@ export const adminRouter = router({
           features: z.string().optional(),
           platforms: z.string().optional(),
           orderType: z.enum(["instant", "on-demand"]).default("instant"),
+          showInReseller: z.number().min(0).max(1).default(0),
         })
       )
       .mutation(async ({ input }) => {
@@ -254,6 +255,7 @@ export const adminRouter = router({
           features: z.string().optional(),
           platforms: z.string().optional(),
           orderType: z.enum(["instant", "on-demand"]).optional(),
+          showInReseller: z.number().min(0).max(1).optional(),
         })
       )
       .mutation(async ({ input }) => {

@@ -484,8 +484,10 @@ export default function Reseller() {
   };
 
   // ── Product sections ──
-  const instantProducts = products.filter(p => !p.orderType || p.orderType === "instant");
-  const onDemandProducts = products.filter(p => p.orderType === "on-demand");
+  // Solo mostrar productos marcados para la tienda reseller
+  const resellerProducts = products.filter((p: any) => p.showInReseller === 1);
+  const instantProducts = resellerProducts.filter(p => !p.orderType || p.orderType === "instant");
+  const onDemandProducts = resellerProducts.filter(p => p.orderType === "on-demand");
 
   // ── Expiring accounts ──
   const now = new Date();

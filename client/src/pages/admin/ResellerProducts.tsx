@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Upload, Store, Zap, Clock, Package } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, Store, Zap, Clock, Package, Eye, EyeOff, ToggleLeft, ToggleRight } from "lucide-react";
 
 type Product = {
   id: number;
@@ -34,7 +34,9 @@ type Product = {
   featured: number;
   inStock: number;
   features: string | null;
+  platforms: string | null;
   orderType?: string;
+  showInReseller?: number;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -50,6 +52,7 @@ const defaultForm = {
   imageUrl: "",
   inStock: "1",
   orderType: "instant",
+  showInReseller: "0",
 };
 
 export default function AdminResellerProducts() {
@@ -61,6 +64,7 @@ export default function AdminResellerProducts() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [filterView, setFilterView] = useState<"all" | "reseller-only">("all");
   const [filterType, setFilterType] = useState<"all" | "instant" | "on-demand">("all");
   const [formData, setFormData] = useState(defaultForm);
 
@@ -89,7 +93,7 @@ export default function AdminResellerProducts() {
   const updateMutation = trpc.admin.products.update.useMutation({
     onSuccess: () => {
       utils.admin.products.list.invalidate();
-      toast.success("Producto actualizado exitosamente");
+      toast.success("Producto actualizado");
       closeDialog();
     },
     onError: (e) => toast.error(e.message || "Error al actualizar producto"),
@@ -101,6 +105,14 @@ export default function AdminResellerProducts() {
       toast.success("Producto eliminado");
     },
     onError: (e) => toast.error(e.message || "Error al eliminar producto"),
+  });
+
+  // Quick toggle showInReseller without opening dialog
+  const toggleResellerMutation = trpc.admin.products.update.useMutation({
+    onSuccess: () => {
+      utils.admin.products.list.invalidate();
+    },
+    onError: (e) => toast.error(e.message || "Error al actualizar"),
   });
 
   const closeDialog = () => {
@@ -130,6 +142,7 @@ export default function AdminResellerProducts() {
       imageUrl: p.imageUrl || "",
       inStock: String(p.inStock),
       orderType: p.orderType || "instant",
+      showInReseller: String(p.showInReseller ?? 0),
     });
     setImagePreview(p.imageUrl || null);
     setDialogOpen(true);
@@ -165,6 +178,7 @@ export default function AdminResellerProducts() {
       featured: 0,
       inStock: parseInt(formData.inStock),
       orderType: formData.orderType as "instant" | "on-demand",
+      showInReseller: parseInt(formData.showInReseller),
     };
     if (editingProduct) {
       updateMutation.mutate({ id: editingProduct.id, ...payload });
@@ -173,15 +187,17 @@ export default function AdminResellerProducts() {
     }
   };
 
-  // Filter products: only show those with resellerPrice set, or filter by orderType
-  const resellerProducts = allProducts.filter((p: any) => {
+  // Filter products
+  const filteredProducts = (allProducts as Product[]).filter((p) => {
+    const matchReseller = filterView === "all" || (filterView === "reseller-only" && p.showInReseller === 1);
     const matchType =
       filterType === "all" ||
       (filterType === "instant" && (!p.orderType || p.orderType === "instant")) ||
       (filterType === "on-demand" && p.orderType === "on-demand");
-    return matchType;
+    return matchReseller && matchType;
   });
 
+  const resellerCount = (allProducts as Product[]).filter((p) => p.showInReseller === 1).length;
   const isLoading = createMutation.isLoading || updateMutation.isLoading;
 
   return (
@@ -195,7 +211,9 @@ export default function AdminResellerProducts() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Productos Reseller</h1>
-              <p className="text-sm text-gray-500">Gestiona los productos visibles en la tienda de resellers</p>
+              <p className="text-sm text-gray-500">
+                {resellerCount} producto{resellerCount !== 1 ? "s" : ""} visible{resellerCount !== 1 ? "s" : ""} en la tienda reseller
+              </p>
             </div>
           </div>
           <Button onClick={openCreate} className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
@@ -204,34 +222,74 @@ export default function AdminResellerProducts() {
           </Button>
         </div>
 
+        {/* Info banner */}
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
+          <Eye className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-blue-800">Control de visibilidad en tienda reseller</p>
+            <p className="text-xs text-blue-600 mt-0.5">
+              Usa el botón <strong>ojo</strong> en cada producto para activar/desactivar su visibilidad en la tienda de resellers. 
+              Solo los productos con el ojo activo aparecerán en <strong>/reseller → Tienda</strong>.
+            </p>
+          </div>
+        </div>
+
         {/* Filter tabs */}
-        <div className="flex gap-2 border-b border-gray-200 pb-0">
-          {[
-            { key: "all", label: "Todos", count: allProducts.length },
-            { key: "instant", label: "Instantáneos", count: allProducts.filter((p: any) => !p.orderType || p.orderType === "instant").length },
-            { key: "on-demand", label: "Bajo Pedido", count: allProducts.filter((p: any) => p.orderType === "on-demand").length },
-          ].map(({ key, label, count }) => (
-            <button
-              key={key}
-              onClick={() => setFilterType(key as any)}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${
-                filterType === key
-                  ? "border-blue-600 text-blue-700"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              {label}
-              <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${filterType === key ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-500"}`}>
-                {count}
-              </span>
-            </button>
-          ))}
+        <div className="flex flex-wrap gap-2 items-center border-b border-gray-200 pb-3">
+          <div className="flex gap-1">
+            {[
+              { key: "all", label: "Todos", count: (allProducts as Product[]).length },
+              { key: "reseller-only", label: "En tienda reseller", count: resellerCount },
+            ].map(({ key, label, count }) => (
+              <button
+                key={key}
+                onClick={() => setFilterView(key as any)}
+                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                  filterView === key
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                {label}
+                <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${filterView === key ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-500"}`}>
+                  {count}
+                </span>
+              </button>
+            ))}
+          </div>
+          <div className="h-5 w-px bg-gray-300 mx-1" />
+          <div className="flex gap-1">
+            {[
+              { key: "all", label: "Todos los tipos" },
+              { key: "instant", label: "⚡ Instantáneos" },
+              { key: "on-demand", label: "🕐 Bajo Pedido" },
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => setFilterType(key as any)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                  filterType === key
+                    ? "bg-gray-800 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Products Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-          {resellerProducts.map((product: any) => (
-            <div key={product.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow group">
+          {filteredProducts.map((product) => (
+            <div
+              key={product.id}
+              className={`bg-white rounded-xl border overflow-hidden hover:shadow-md transition-all ${
+                product.showInReseller === 1
+                  ? "border-blue-300 ring-1 ring-blue-200"
+                  : "border-gray-200 opacity-70"
+              }`}
+            >
               {/* Image */}
               <div className="relative h-32">
                 {product.imageUrl ? (
@@ -250,11 +308,11 @@ export default function AdminResellerProducts() {
                   {product.orderType === "on-demand" ? <Clock className="h-2.5 w-2.5" /> : <Zap className="h-2.5 w-2.5" />}
                   {product.orderType === "on-demand" ? "Pedido" : "Instant"}
                 </div>
-                {/* Stock badge */}
+                {/* Reseller visibility badge */}
                 <div className={`absolute top-2 right-2 text-xs font-semibold px-1.5 py-0.5 rounded-full ${
-                  product.inStock ? "bg-blue-500 text-white" : "bg-red-500 text-white"
+                  product.showInReseller === 1 ? "bg-blue-600 text-white" : "bg-gray-400 text-white"
                 }`}>
-                  {product.inStock ? "✓" : "✗"}
+                  {product.showInReseller === 1 ? "👁 Visible" : "🚫 Oculto"}
                 </div>
               </div>
 
@@ -271,12 +329,33 @@ export default function AdminResellerProducts() {
 
               {/* Actions */}
               <div className="px-3 pb-3 flex gap-1.5">
+                {/* Toggle reseller visibility */}
+                <button
+                  onClick={() => {
+                    toggleResellerMutation.mutate({
+                      id: product.id,
+                      showInReseller: product.showInReseller === 1 ? 0 : 1,
+                    });
+                  }}
+                  title={product.showInReseller === 1 ? "Ocultar de tienda reseller" : "Mostrar en tienda reseller"}
+                  className={`flex-1 text-xs font-medium py-1.5 rounded-lg flex items-center justify-center gap-1 transition-colors ${
+                    product.showInReseller === 1
+                      ? "bg-blue-600 hover:bg-blue-700 text-white"
+                      : "bg-gray-100 hover:bg-gray-200 text-gray-600"
+                  }`}
+                >
+                  {product.showInReseller === 1 ? (
+                    <><Eye className="h-3 w-3" /> Visible</>
+                  ) : (
+                    <><EyeOff className="h-3 w-3" /> Oculto</>
+                  )}
+                </button>
                 <button
                   onClick={() => openEdit(product)}
-                  className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-medium py-1.5 rounded-lg flex items-center justify-center gap-1 transition-colors"
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-1.5 rounded-lg transition-colors"
+                  title="Editar"
                 >
-                  <Pencil className="h-3 w-3" />
-                  Editar
+                  <Pencil className="h-3.5 w-3.5" />
                 </button>
                 <button
                   onClick={() => {
@@ -285,6 +364,7 @@ export default function AdminResellerProducts() {
                     }
                   }}
                   className="bg-red-50 hover:bg-red-100 text-red-600 p-1.5 rounded-lg transition-colors"
+                  title="Eliminar"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
@@ -292,10 +372,13 @@ export default function AdminResellerProducts() {
             </div>
           ))}
 
-          {resellerProducts.length === 0 && (
+          {filteredProducts.length === 0 && (
             <div className="col-span-full text-center py-16 text-gray-400">
               <Store className="h-12 w-12 mx-auto mb-3 opacity-40" />
-              <p className="text-sm">No hay productos en esta categoría.</p>
+              <p className="text-sm">No hay productos en esta vista.</p>
+              {filterView === "reseller-only" && (
+                <p className="text-xs mt-1 text-gray-400">Activa el ojo en los productos que quieres mostrar en la tienda reseller.</p>
+              )}
               <Button onClick={openCreate} variant="outline" className="mt-4 gap-2">
                 <Plus className="h-4 w-4" />
                 Crear primer producto
@@ -311,7 +394,7 @@ export default function AdminResellerProducts() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Store className="h-5 w-5 text-blue-600" />
-              {editingProduct ? "Editar Producto Reseller" : "Nuevo Producto Reseller"}
+              {editingProduct ? "Editar Producto" : "Nuevo Producto"}
             </DialogTitle>
           </DialogHeader>
 
@@ -348,7 +431,7 @@ export default function AdminResellerProducts() {
                     <SelectValue placeholder="Seleccionar categoría" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map((c: any) => (
+                    {(categories as any[]).map((c) => (
                       <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
                     ))}
                   </SelectContent>
@@ -410,6 +493,36 @@ export default function AdminResellerProducts() {
                     <SelectItem value="0">Agotado</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              {/* showInReseller toggle */}
+              <div className="col-span-2">
+                <Label>Visibilidad en tienda reseller</Label>
+                <div className="mt-2 flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setFormData((f) => ({ ...f, showInReseller: f.showInReseller === "1" ? "0" : "1" }))}
+                    className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none ${
+                      formData.showInReseller === "1" ? "bg-blue-600" : "bg-gray-300"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                        formData.showInReseller === "1" ? "translate-x-8" : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                  <span className={`text-sm font-medium ${formData.showInReseller === "1" ? "text-blue-700" : "text-gray-500"}`}>
+                    {formData.showInReseller === "1" ? (
+                      <span className="flex items-center gap-1"><Eye className="h-4 w-4" /> Visible en tienda reseller</span>
+                    ) : (
+                      <span className="flex items-center gap-1"><EyeOff className="h-4 w-4" /> Oculto en tienda reseller</span>
+                    )}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-400 mt-1">
+                  Activa esta opción para que el producto aparezca en la sección Tienda del área reseller.
+                </p>
               </div>
 
               <div className="col-span-2">
