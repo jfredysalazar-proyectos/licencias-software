@@ -46,9 +46,10 @@ const trpcClient = trpc.createClient({
         // Get admin token and customer token from localStorage if exists
         const adminToken = localStorage.getItem('admin_token');
         const customerToken = localStorage.getItem('customerToken');
+        const resellerToken = localStorage.getItem('resellerToken');
         
-        // Priority: admin token > customer token
-        const token = adminToken || customerToken;
+        // Priority: admin token > customer token > reseller token
+        const token = adminToken || customerToken || resellerToken;
         
         const headers = {
           ...(init?.headers || {}),
