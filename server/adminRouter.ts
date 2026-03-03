@@ -352,6 +352,32 @@ export const adminRouter = router({
           await db.updateCustomerRole(input.id, input.role);
           return { success: true };
         }),
+      create: adminProcedure
+        .input(z.object({
+          email: z.string().email(),
+          password: z.string().min(6),
+          name: z.string().optional(),
+          phone: z.string().optional(),
+          role: z.enum(["customer", "reseller"]).default("reseller"),
+        }))
+        .mutation(async ({ input }) => {
+          const existing = await db.getCustomerByEmail(input.email);
+          if (existing) {
+            throw new Error("El email ya está registrado");
+          }
+          const bcrypt = await import("bcryptjs");
+          const passwordHash = await bcrypt.default.hash(input.password, 10);
+          const id = await db.createCustomer({
+            email: input.email,
+            passwordHash,
+            name: input.name,
+            phone: input.phone,
+            active: 1,
+            role: input.role,
+            balance: 0,
+          });
+          return { success: true, id };
+        }),
     }),
   }),
 
