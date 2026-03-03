@@ -1,4 +1,9 @@
 import "dotenv/config";
+import { webcrypto } from "crypto";
+// Polyfill crypto global for Node.js 18 compatibility (required by jose 6.x)
+if (typeof globalThis.crypto === "undefined") {
+  (globalThis as any).crypto = webcrypto;
+}
 import express from "express";
 import { createServer } from "http";
 import net from "net";
