@@ -10,6 +10,38 @@ import { serveStatic, setupVite } from "./vite";
 import { runAutoMigrations } from "../auto-migrate";
 import { generateSitemap } from "../sitemap";
 import { initSoldLicensesTable } from "../init-sold-licenses-table";
+import mysql from "mysql2/promise";
+
+async function syncDbColumns() {
+  const url = process.env.DATABASE_URL;
+  if (!url) return;
+
+  console.log("[Database] Checking for missing columns...");
+  const connection = await mysql.createConnection(url);
+  
+  try {
+    const queries = [
+      "ALTER TABLE `customers` ADD COLUMN IF NOT EXISTS `role` enum('customer','reseller') DEFAULT 'customer' NOT NULL",
+      "ALTER TABLE `customers` ADD COLUMN IF NOT EXISTS `balance` int DEFAULT 0 NOT NULL",
+      "ALTER TABLE `products` ADD COLUMN IF NOT EXISTS `resellerPrice` int DEFAULT NULL"
+    ];
+
+    for (const query of queries) {
+      try {
+        await connection.query(query);
+      } catch (err: any) {
+        if (err.code !== 'ER_DUP_COLUMN_NAME') {
+          console.error(`[Database] Error sync query: ${query}`, err.message);
+        }
+      }
+    }
+    console.log("[Database] Column sync completed.");
+  } catch (error) {
+    console.error("[Database] Column sync failed:", error);
+  } finally {
+    await connection.end();
+  }
+}
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -33,6 +65,9 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
   // Run auto-migrations first
   await runAutoMigrations();
+  
+  // Sync missing columns
+  await syncDbColumns();
   
   // Initialize sold_licenses table
   await initSoldLicensesTable();
