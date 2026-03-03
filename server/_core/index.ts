@@ -20,18 +20,22 @@ async function syncDbColumns() {
   const connection = await mysql.createConnection(url);
   
   try {
-    const queries = [
-      "ALTER TABLE `customers` ADD COLUMN IF NOT EXISTS `role` enum('customer','reseller') DEFAULT 'customer' NOT NULL",
-      "ALTER TABLE `customers` ADD COLUMN IF NOT EXISTS `balance` int DEFAULT 0 NOT NULL",
-      "ALTER TABLE `products` ADD COLUMN IF NOT EXISTS `resellerPrice` int DEFAULT NULL"
+    const columnsToAdd = [
+      { table: 'customers', column: 'role', definition: "enum('customer','reseller') DEFAULT 'customer' NOT NULL" },
+      { table: 'customers', column: 'balance', definition: "int DEFAULT 0 NOT NULL" },
+      { table: 'products', column: 'resellerPrice', definition: "int DEFAULT NULL" }
     ];
 
-    for (const query of queries) {
+    for (const item of columnsToAdd) {
       try {
-        await connection.query(query);
+        // MySQL standard ALTER TABLE ADD COLUMN (without IF NOT EXISTS which is MariaDB or newer MySQL 8.0.19+)
+        await connection.query(`ALTER TABLE \`${item.table}\` ADD COLUMN \`${item.column}\` ${item.definition}`);
+        console.log(`[Database] Column '${item.column}' added to table '${item.table}'.`);
       } catch (err: any) {
-        if (err.code !== 'ER_DUP_COLUMN_NAME') {
-          console.error(`[Database] Error sync query: ${query}`, err.message);
+        if (err.code === 'ER_DUP_COLUMN_NAME' || err.errno === 1060) {
+          console.log(`[Database] Column '${item.column}' already exists in table '${item.table}'.`);
+        } else {
+          console.error(`[Database] Error adding column '${item.column}' to '${item.table}':`, err.message);
         }
       }
     }
