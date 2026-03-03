@@ -6,6 +6,8 @@ CREATE TABLE IF NOT EXISTS `customers` (
   `name` varchar(200),
   `phone` varchar(50),
   `active` int NOT NULL DEFAULT 1,
+  `role` enum('customer', 'reseller') NOT NULL DEFAULT 'customer',
+  `balance` int NOT NULL DEFAULT 0,
   `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `lastLogin` timestamp
 );
