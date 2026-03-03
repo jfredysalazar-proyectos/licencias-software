@@ -64,6 +64,13 @@
       "when": 1737568000000,
       "tag": "0008_create_sold_licenses_table",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1740999000000,
+      "tag": "0009_add_missing_customer_columns",
+      "breakpoints": true
     }
   ]
 }
