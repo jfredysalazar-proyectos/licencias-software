@@ -33,6 +33,7 @@ interface Product {
   imageUrl?: string | null;
   inStock: number;
   orderType?: string;
+  showInReseller?: number;
 }
 
 interface CartItem {
@@ -485,7 +486,8 @@ export default function Reseller() {
 
   // ── Product sections ──
   // Solo mostrar productos marcados para la tienda reseller
-  const resellerProducts = products.filter((p: any) => p.showInReseller === 1);
+  // Usamos Number() para ser robustos ante string '1' o number 1
+  const resellerProducts = products.filter((p) => Number(p.showInReseller) === 1);
   const instantProducts = resellerProducts.filter(p => !p.orderType || p.orderType === "instant");
   const onDemandProducts = resellerProducts.filter(p => p.orderType === "on-demand");
 
@@ -768,10 +770,11 @@ export default function Reseller() {
               </section>
             )}
 
-            {products.length === 0 && (
+            {resellerProducts.length === 0 && (
               <div className="text-center py-16 text-gray-400">
                 <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>No hay productos disponibles aún.</p>
+                <p>No hay productos disponibles en la tienda reseller aún.</p>
+                <p className="text-xs mt-1">El administrador debe activar productos desde el panel de administración.</p>
               </div>
             )}
           </div>
