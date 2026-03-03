@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -369,7 +369,6 @@ export default function Reseller() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [user, setUser] = useState<ResellerUser | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [activeTab, setActiveTab] = useState<"dashboard" | "store">("dashboard");
@@ -411,21 +410,36 @@ export default function Reseller() {
     onError: (error) => toast.error(error.message || "Error al iniciar sesión"),
   });
 
-  trpc.customer.me.useQuery(undefined, {
+  const meQuery = trpc.customer.me.useQuery(undefined, {
     enabled: !!localStorage.getItem("resellerToken"),
     retry: false,
-    onSuccess: (data) => { setUser(data as any); setIsAuthenticated(true); },
-    onError: () => localStorage.removeItem("resellerToken"),
   });
 
-  trpc.products.list.useQuery(undefined, {
-    onSuccess: (data) => setProducts(data as any),
-  });
+  // Sincronizar user con useEffect
+  useEffect(() => {
+    if (meQuery.data) {
+      setUser(meQuery.data as any);
+      setIsAuthenticated(true);
+    }
+    if (meQuery.error) {
+      localStorage.removeItem("resellerToken");
+    }
+  }, [meQuery.data, meQuery.error]);
 
-  trpc.customer.myOrders.useQuery(undefined, {
+  // Productos: usar data directamente del hook (sin onSuccess)
+  const { data: productsData } = trpc.products.list.useQuery(undefined);
+  const products: Product[] = (productsData as any) || [];
+
+  const ordersQuery = trpc.customer.myOrders.useQuery(undefined, {
     enabled: isAuthenticated,
-    onSuccess: (data) => setOrders(data as any),
   });
+
+  // Sincronizar orders con useEffect
+  useEffect(() => {
+    if (ordersQuery.data) {
+      setOrders(ordersQuery.data as any);
+    }
+  }, [ordersQuery.data]);
 
   const { data: whatsappData } = trpc.settings.getWhatsapp.useQuery();
   const whatsappPhone = whatsappData?.phone ?? null;
