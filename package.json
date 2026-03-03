@@ -13,6 +13,7 @@
     "fix-platforms-sql": "tsx fix-platforms-sql.ts",
     "fix-features": "tsx fix-features-field.ts",
     "migrate-payment-methods": "tsx run-payment-methods-migration.ts",
+    "sync-db": "tsx server/sync-db.ts",
     "force-add-columns": "tsx server/force-add-columns.ts",
     "seed-payment-methods": "tsx server/seed-payment-methods.ts",
     "format": "prettier --write .",
