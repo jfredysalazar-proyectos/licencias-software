@@ -19,40 +19,35 @@ async function syncDbColumns() {
     return;
   }
 
-  console.log("[Database] Starting robust column synchronization...");
+  console.log("[Database] Starting database column synchronization...");
   let connection;
   try {
     connection = await mysql.createConnection(url);
     
-    const columnsToAdd = [
-      { table: 'customers', column: 'role', definition: "enum('customer','reseller') DEFAULT 'customer' NOT NULL" },
-      { table: 'customers', column: 'balance', definition: "int DEFAULT 0 NOT NULL" },
-      { table: 'products', column: 'resellerPrice', definition: "int DEFAULT NULL" }
+    // Simple approach: Try to add columns, catch errors if they already exist
+    const alterStatements = [
+      `ALTER TABLE customers ADD COLUMN role varchar(20) DEFAULT 'customer' NOT NULL`,
+      `ALTER TABLE customers ADD COLUMN balance int DEFAULT 0 NOT NULL`,
+      `ALTER TABLE products ADD COLUMN resellerPrice int DEFAULT NULL`
     ];
 
-    for (const item of columnsToAdd) {
+    for (const sql of alterStatements) {
       try {
-        // Enfoque robusto: Primero verificamos si la columna existe consultando information_schema
-        const [rows]: any = await connection.query(
-          `SELECT COLUMN_NAME FROM information_schema.COLUMNS 
-           WHERE TABLE_NAME = ? AND COLUMN_NAME = ? AND TABLE_SCHEMA = DATABASE()`,
-          [item.table, item.column]
-        );
-
-        if (rows.length === 0) {
-          console.log(`[Database] Column '${item.column}' missing in '${item.table}'. Adding it...`);
-          await connection.query(`ALTER TABLE \`${item.table}\` ADD COLUMN \`${item.column}\` ${item.definition}`);
-          console.log(`[Database] Column '${item.column}' added successfully.`);
-        } else {
-          console.log(`[Database] Column '${item.column}' already exists in '${item.table}'.`);
-        }
+        await connection.query(sql);
+        console.log(`[Database] ✓ Executed: ${sql.substring(0, 50)}...`);
       } catch (err: any) {
-        console.error(`[Database] Error processing column '${item.column}' in '${item.table}':`, err.message);
+        // If column already exists (error 1060), that's fine
+        if (err.code === 'ER_DUP_FIELDNAME' || err.errno === 1060) {
+          console.log(`[Database] ℹ Column already exists (expected): ${sql.substring(0, 50)}...`);
+        } else {
+          console.error(`[Database] ✗ Error: ${err.message}`);
+        }
       }
     }
-    console.log("[Database] Robust column sync completed.");
+    
+    console.log("[Database] Column synchronization completed.");
   } catch (error: any) {
-    console.error("[Database] Column sync failed to connect or execute:", error.message);
+    console.error("[Database] Failed to connect for sync:", error.message);
   } finally {
     if (connection) await connection.end();
   }
