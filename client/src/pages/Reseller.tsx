@@ -312,7 +312,7 @@ export default function Reseller() {
               <div className="text-right hidden sm:block">
                 <p className="text-sm text-gray-600">Saldo Disponible</p>
                 <p className="text-lg font-bold text-green-600">
-                  ${user?.balance.toLocaleString("es-CO")} COP
+                  ${(user?.balance ?? 0).toLocaleString("es-CO")} COP
                 </p>
               </div>
               <Button variant="outline" size="sm">

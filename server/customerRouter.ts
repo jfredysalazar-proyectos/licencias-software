@@ -94,6 +94,9 @@ export const customerRouter = router({
           id: customerId,
           email: input.email,
           name: input.name,
+          phone: input.phone ?? null,
+          role: "customer" as const,
+          balance: 0,
         },
       };
     }),
@@ -146,6 +149,9 @@ export const customerRouter = router({
           id: customer.id,
           email: customer.email,
           name: customer.name,
+          phone: customer.phone ?? null,
+          role: customer.role,
+          balance: customer.balance,
         },
       };
     }),
