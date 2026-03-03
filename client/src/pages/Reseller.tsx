@@ -28,6 +28,7 @@ interface Product {
   name: string;
   slug: string;
   description: string;
+  shortDescription?: string | null;
   basePrice: number;
   resellerPrice?: number | null;
   imageUrl?: string | null;
@@ -139,19 +140,28 @@ function ProductCard({ product, onBuy, onAddCart, onInfo, isOnDemand }: {
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col hover:shadow-md transition-shadow">
-      {/* Product Image */}
-      <div className="relative">
+      {/* Product Image — ratio 1:1 */}
+      <div className="relative w-full" style={{ paddingBottom: "100%" }}>
         {product.imageUrl ? (
-          <img src={product.imageUrl} alt={product.name} className="w-full h-36 object-cover" />
+          <img
+            src={product.imageUrl}
+            alt={product.name}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
         ) : (
-          <div className="w-full h-36 bg-gradient-to-br from-gray-800 to-gray-600 flex items-center justify-center">
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-600 flex items-center justify-center">
             <Package className="h-12 w-12 text-gray-400" />
           </div>
         )}
       </div>
 
+      {/* Product Name */}
+      <div className="px-3 pt-2">
+        <p className="text-xs font-semibold text-gray-800 leading-tight line-clamp-2">{product.name}</p>
+      </div>
+
       {/* Price & Status */}
-      <div className="px-3 pt-2 pb-1">
+      <div className="px-3 pt-1 pb-1">
         <p className="text-base font-bold text-gray-900">
           $ {price.toLocaleString("es-CO", { minimumFractionDigits: 2 })}
         </p>
@@ -755,33 +765,32 @@ export default function Reseller() {
                         addToCart(product, "instant");
                       }}
                       onAddCart={() => addToCart(product, "instant")}
-                      onInfo={() => toast.info(product.description || product.name)}
+                      onInfo={() => toast.info(product.shortDescription || product.description || product.name)}
                     />
                   ))}
-                </div>
-              </section>
-            )}
+              </div>
+            </section>
+          )}
 
-            {/* ── Cuentas Bajo Pedido ── */}
-            {onDemandProducts.length > 0 && (
-              <section>
-                <div className="text-center mb-5">
-                  <h2 className="text-2xl font-bold text-blue-700 uppercase tracking-wide">Cuentas Bajo Pedido</h2>
-                  <div className="w-24 h-0.5 bg-blue-700 mx-auto mt-1 mb-2" />
-                  <p className="text-gray-500 text-sm">Podrás comprar las siguientes cuentas realizando la solicitud vía WhatsApp dentro de nuestro horario.</p>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                  {onDemandProducts.map((product) => (
-                    <ProductCard
-                      key={product.id}
-                      product={product}
-                      isOnDemand={true}
-                      onBuy={() => addToCart(product, "on-demand")}
-                      onInfo={() => toast.info(product.description || product.name)}
-                    />
-                  ))}
-                </div>
-              </section>
+          {/* On-demand products */}
+          {ee.length > 0 && (
+            <section>
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold text-blue-700 uppercase tracking-wide">Cuentas Bajo Pedido</h2>
+                <p className="text-sm text-gray-500 mt-1">Podrás comprar las siguientes cuentas realizando la solicitud via WhatsApp dentro de nuestro horario.</p>
+                <div className="w-24 h-1 bg-blue-600 mx-auto mt-2 rounded" />
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                {ee.map(product => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    onBuy={() => addToCart(product, "on-demand")}
+                    onInfo={() => toast.info(product.shortDescription || product.description || product.name)}
+                  />
+                ))}
+              </div>
+            </section>
             )}
 
             {resellerProducts.length === 0 && (

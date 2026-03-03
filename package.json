@@ -22,7 +22,8 @@
     "migrate-sold-licenses": "tsx run-migration-sold-licenses.ts",
     "fix-customers": "tsx fix-customers-columns.ts",
     "fix-order-type": "tsx fix-order-type.ts",
-    "fix-show-in-reseller": "tsx fix-show-in-reseller.ts"
+    "fix-show-in-reseller": "tsx fix-show-in-reseller.ts",
+    "fix-orders-columns": "tsx fix-orders-columns.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.693.0",
