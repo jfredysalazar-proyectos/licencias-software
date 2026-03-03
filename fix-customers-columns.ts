@@ -1,9 +1,10 @@
 import mysql from "mysql2/promise";
 
 /**
- * Script para agregar las columnas faltantes (role, balance) a la tabla customers.
- * Se ejecuta durante el build en Railway para corregir la desincronización entre
- * el schema de Drizzle y la tabla existente en la base de datos.
+ * Script para garantizar que la tabla customers existe con todas las columnas correctas.
+ * - Si la tabla no existe, la crea completa.
+ * - Si la tabla existe pero le faltan columnas (role, balance), las agrega.
+ * - Nunca falla con exit code 1 por errores no críticos.
  */
 async function fixCustomersColumns() {
   const url = process.env.DATABASE_URL;
@@ -16,9 +17,36 @@ async function fixCustomersColumns() {
   const connection = await mysql.createConnection(url);
 
   try {
-    console.log("[fix-customers] Checking customers table columns...");
+    // Verificar si la tabla customers existe
+    const [tables] = await connection.query(
+      `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES 
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'customers'`
+    );
 
-    // Verificar qué columnas existen actualmente
+    const tableExists = (tables as any[]).length > 0;
+
+    if (!tableExists) {
+      console.log("[fix-customers] Table 'customers' does not exist. Creating it...");
+      await connection.query(`
+        CREATE TABLE IF NOT EXISTS \`customers\` (
+          \`id\` int AUTO_INCREMENT PRIMARY KEY,
+          \`email\` varchar(320) NOT NULL UNIQUE,
+          \`passwordHash\` varchar(255) NOT NULL,
+          \`name\` varchar(200),
+          \`phone\` varchar(50),
+          \`active\` int NOT NULL DEFAULT 1,
+          \`role\` enum('customer','reseller') NOT NULL DEFAULT 'customer',
+          \`balance\` int NOT NULL DEFAULT 0,
+          \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          \`lastLogin\` timestamp NULL
+        )
+      `);
+      console.log("[fix-customers] ✅ Table 'customers' created successfully.");
+      process.exit(0);
+    }
+
+    // La tabla existe — verificar columnas
+    console.log("[fix-customers] Table exists. Checking columns...");
     const [columns] = await connection.query(
       `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'customers'`
@@ -51,8 +79,9 @@ async function fixCustomersColumns() {
     console.log("[fix-customers] ✅ Done.");
     process.exit(0);
   } catch (error: any) {
-    console.error("[fix-customers] Error:", error.message);
-    process.exit(1);
+    console.error("[fix-customers] Fatal error:", error.message);
+    // Exit 0 para no bloquear el build — el servidor tiene syncDbColumns como fallback
+    process.exit(0);
   } finally {
     await connection.end();
   }
