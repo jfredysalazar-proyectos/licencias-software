@@ -1,4 +1,4 @@
-import { eq, like, and, desc, sql } from "drizzle-orm";
+import { eq, like, and, desc, sql, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, categories, Category, InsertCategory, products, Product, InsertProduct, orders, Order, InsertOrder, admins, Admin, InsertAdmin, settings, Setting, InsertSetting, customers, Customer, InsertCustomer, productVariants, ProductVariant, InsertProductVariant, variantOptions, VariantOption, InsertVariantOption, productSkus, ProductSku, InsertProductSku, soldLicenses, SoldLicense, InsertSoldLicense, paymentMethods, PaymentMethod, InsertPaymentMethod } from "../drizzle/schema";
 import { ENV } from './_core/env';
@@ -322,6 +322,38 @@ export async function updateOrderStatus(id: number, status: "pending" | "complet
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.update(orders).set({ status }).where(eq(orders.id, id));
+}
+
+export async function updateOrderExpiry(
+  id: number,
+  expiresAt: Date | null,
+  accountData?: string
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const updateData: any = { expiresAt, updatedAt: new Date() };
+  if (accountData !== undefined) {
+    // Store account data in items field as extended JSON or as a separate note
+    // We'll update the items field to include accountData
+    const current = await db.select().from(orders).where(eq(orders.id, id)).limit(1);
+    if (current[0]) {
+      let items: any[] = [];
+      try { items = JSON.parse(current[0].items); } catch {}
+      // Add accountData to each item
+      items = items.map((item: any) => ({ ...item, accountData }));
+      updateData.items = JSON.stringify(items);
+    }
+  }
+  await db.update(orders).set(updateData).where(eq(orders.id, id));
+}
+
+export async function getResellerOrders(): Promise<Order[]> {
+  const db = await getDb();
+  if (!db) return [];
+  // Get orders that have a customerId (reseller orders)
+  return await db.select().from(orders)
+    .where(isNotNull(orders.customerId))
+    .orderBy(desc(orders.createdAt));
 }
 
 // ==================== ADMIN USER MANAGEMENT ====================

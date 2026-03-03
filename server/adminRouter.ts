@@ -333,6 +333,27 @@ export const adminRouter = router({
         await db.updateOrderStatus(input.id, input.status);
         return { success: true };
       }),
+
+    updateExpiry: adminProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          expiresAt: z.string().nullable(), // ISO date string or null
+          accountData: z.string().optional(), // JSON string with account credentials
+        })
+      )
+      .mutation(async ({ input }) => {
+        await db.updateOrderExpiry(
+          input.id,
+          input.expiresAt ? new Date(input.expiresAt) : null,
+          input.accountData
+        );
+        return { success: true };
+      }),
+
+    resellerOrders: adminProcedure.query(async () => {
+      return await db.getResellerOrders();
+    }),
   }),
 
   // ==================== USERS ====================
