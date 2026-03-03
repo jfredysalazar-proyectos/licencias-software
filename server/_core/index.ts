@@ -14,12 +14,16 @@ import mysql from "mysql2/promise";
 
 async function syncDbColumns() {
   const url = process.env.DATABASE_URL;
-  if (!url) return;
+  if (!url) {
+    console.log("[Database] No DATABASE_URL found, skipping column sync.");
+    return;
+  }
 
-  console.log("[Database] Checking for missing columns...");
-  const connection = await mysql.createConnection(url);
-  
+  console.log("[Database] Starting robust column synchronization...");
+  let connection;
   try {
+    connection = await mysql.createConnection(url);
+    
     const columnsToAdd = [
       { table: 'customers', column: 'role', definition: "enum('customer','reseller') DEFAULT 'customer' NOT NULL" },
       { table: 'customers', column: 'balance', definition: "int DEFAULT 0 NOT NULL" },
@@ -28,22 +32,29 @@ async function syncDbColumns() {
 
     for (const item of columnsToAdd) {
       try {
-        // MySQL standard ALTER TABLE ADD COLUMN (without IF NOT EXISTS which is MariaDB or newer MySQL 8.0.19+)
-        await connection.query(`ALTER TABLE \`${item.table}\` ADD COLUMN \`${item.column}\` ${item.definition}`);
-        console.log(`[Database] Column '${item.column}' added to table '${item.table}'.`);
-      } catch (err: any) {
-        if (err.code === 'ER_DUP_COLUMN_NAME' || err.errno === 1060) {
-          console.log(`[Database] Column '${item.column}' already exists in table '${item.table}'.`);
+        // Enfoque robusto: Primero verificamos si la columna existe consultando information_schema
+        const [rows]: any = await connection.query(
+          `SELECT COLUMN_NAME FROM information_schema.COLUMNS 
+           WHERE TABLE_NAME = ? AND COLUMN_NAME = ? AND TABLE_SCHEMA = DATABASE()`,
+          [item.table, item.column]
+        );
+
+        if (rows.length === 0) {
+          console.log(`[Database] Column '${item.column}' missing in '${item.table}'. Adding it...`);
+          await connection.query(`ALTER TABLE \`${item.table}\` ADD COLUMN \`${item.column}\` ${item.definition}`);
+          console.log(`[Database] Column '${item.column}' added successfully.`);
         } else {
-          console.error(`[Database] Error adding column '${item.column}' to '${item.table}':`, err.message);
+          console.log(`[Database] Column '${item.column}' already exists in '${item.table}'.`);
         }
+      } catch (err: any) {
+        console.error(`[Database] Error processing column '${item.column}' in '${item.table}':`, err.message);
       }
     }
-    console.log("[Database] Column sync completed.");
-  } catch (error) {
-    console.error("[Database] Column sync failed:", error);
+    console.log("[Database] Robust column sync completed.");
+  } catch (error: any) {
+    console.error("[Database] Column sync failed to connect or execute:", error.message);
   } finally {
-    await connection.end();
+    if (connection) await connection.end();
   }
 }
 
@@ -67,11 +78,11 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 }
 
 async function startServer() {
-  // Run auto-migrations first
-  await runAutoMigrations();
-  
-  // Sync missing columns
+  // Sync missing columns before anything else
   await syncDbColumns();
+  
+  // Run auto-migrations
+  await runAutoMigrations();
   
   // Initialize sold_licenses table
   await initSoldLicensesTable();
