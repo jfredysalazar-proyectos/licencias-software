@@ -768,29 +768,31 @@ export default function Reseller() {
                       onInfo={() => toast.info(product.shortDescription || product.description || product.name)}
                     />
                   ))}
-              </div>
-            </section>
-          )}
+                </div>
+              </section>
+            )}
 
-          {/* On-demand products */}
-          {ee.length > 0 && (
-            <section>
-              <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold text-blue-700 uppercase tracking-wide">Cuentas Bajo Pedido</h2>
-                <p className="text-sm text-gray-500 mt-1">Podrás comprar las siguientes cuentas realizando la solicitud via WhatsApp dentro de nuestro horario.</p>
-                <div className="w-24 h-1 bg-blue-600 mx-auto mt-2 rounded" />
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {ee.map(product => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    onBuy={() => addToCart(product, "on-demand")}
-                    onInfo={() => toast.info(product.shortDescription || product.description || product.name)}
-                  />
-                ))}
-              </div>
-            </section>
+            {/* Cuentas Bajo Pedido */}
+            {onDemandProducts.length > 0 && (
+              <section>
+                <div className="text-center mb-5">
+                  <h2 className="text-2xl font-bold text-blue-700 uppercase tracking-wide">Cuentas Bajo Pedido</h2>
+                  <div className="w-24 h-0.5 bg-blue-700 mx-auto mt-1 mb-2" />
+                  <p className="text-sm text-gray-500">Podrás comprar las siguientes cuentas realizando la solicitud via WhatsApp dentro de nuestro horario.</p>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                  {onDemandProducts.map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      isOnDemand={true}
+                      onBuy={() => addToCart(product, "on-demand")}
+                      onAddCart={() => addToCart(product, "on-demand")}
+                      onInfo={() => toast.info(product.shortDescription || product.description || product.name)}
+                    />
+                  ))}
+                </div>
+              </section>
             )}
 
             {resellerProducts.length === 0 && (
