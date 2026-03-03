@@ -30,6 +30,7 @@ import MyAccount from "./pages/MyAccount";
 import OrderSuccess from "./pages/OrderSuccess";
 import Reseller from "./pages/Reseller";
 import ResellersAdmin from "./pages/admin/Resellers";
+import AdminResellerProducts from "./pages/admin/ResellerProducts";
 
 function Router() {
   return (
@@ -63,6 +64,7 @@ function Router() {
       <Route path="/admin/orders" component={AdminOrders} />
       <Route path="/admin/customers" component={AdminCustomers} />
       <Route path="/admin/resellers" component={ResellersAdmin} />
+      <Route path="/admin/reseller-products" component={AdminResellerProducts} />
       <Route path="/admin/settings" component={AdminSettings} />
       <Route path="/admin/sold-licenses" component={AdminSoldLicenses} />
       <Route path="/admin/sold-licenses/:id/edit" component={AdminSoldLicenseEdit} />

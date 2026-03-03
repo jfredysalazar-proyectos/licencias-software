@@ -229,10 +229,11 @@ export const adminRouter = router({
           inStock: z.number().min(0).max(1).default(1),
           features: z.string().optional(),
           platforms: z.string().optional(),
+          orderType: z.enum(["instant", "on-demand"]).default("instant"),
         })
       )
       .mutation(async ({ input }) => {
-        const id = await db.createProduct(input);
+        const id = await db.createProduct(input as any);
         return { id, success: true };
       }),
 
@@ -252,6 +253,7 @@ export const adminRouter = router({
           inStock: z.number().min(0).max(1).optional(),
           features: z.string().optional(),
           platforms: z.string().optional(),
+          orderType: z.enum(["instant", "on-demand"]).optional(),
         })
       )
       .mutation(async ({ input }) => {

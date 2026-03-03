@@ -258,6 +258,8 @@ export async function createProduct(product: InsertProduct): Promise<number> {
   if (product.platforms !== undefined && product.platforms !== null && product.platforms !== '') {
     insertData.platforms = product.platforms;
   }
+  // orderType: 'instant' (default) or 'on-demand'
+  insertData.orderType = product.orderType || 'instant';
   
   console.log('[createProduct] SOLUCIÓN DEFINITIVA - Proporcionando valores explícitos para todos los campos');
   

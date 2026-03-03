@@ -11,7 +11,8 @@ import {
   Settings, 
   LogOut,
   Key,
-  CreditCard
+  CreditCard,
+  Store
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -57,6 +58,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { icon: Key, label: "Licencias Vendidas", path: "/admin/sold-licenses" },
     { icon: Users, label: "Clientes", path: "/admin/customers" },
     { icon: Users, label: "Resellers", path: "/admin/resellers" },
+    { icon: Store, label: "Productos Reseller", path: "/admin/reseller-products" },
     { icon: CreditCard, label: "Métodos de Pago", path: "/admin/payment-methods" },
     { icon: Settings, label: "Configuración", path: "/admin/settings" },
   ];

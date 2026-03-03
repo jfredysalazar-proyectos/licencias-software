@@ -78,6 +78,7 @@ export const products = mysqlTable("products", {
   inStock: int("inStock").notNull(), // 0 or 1 for boolean
   features: text("features"), // JSON string of features array
   platforms: text("platforms"), // JSON string of platforms array: ["windows", "macos", "android", "ios", "linux"]
+  orderType: varchar("orderType", { length: 20 }).notNull().default("instant"), // 'instant' or 'on-demand'
   createdAt: timestamp("createdAt").notNull().$defaultFn(() => new Date()),
   updatedAt: timestamp("updatedAt").notNull().$defaultFn(() => new Date()),
 });

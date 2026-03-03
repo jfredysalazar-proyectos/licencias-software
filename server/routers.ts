@@ -188,6 +188,20 @@ export const appRouter = router({
       }),
   }),
 
+  // ==================== PUBLIC SETTINGS ====================
+  settings: router({
+    getWhatsapp: publicProcedure.query(async () => {
+      const setting = await db.getSetting("whatsapp_config");
+      if (!setting) return { phone: null };
+      try {
+        const config = JSON.parse(setting.value || "{}");
+        return { phone: config.admin_phone || null };
+      } catch {
+        return { phone: null };
+      }
+    }),
+  }),
+
   orders: router({
     create: publicProcedure
       .input(
