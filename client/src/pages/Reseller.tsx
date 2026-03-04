@@ -453,8 +453,12 @@ export default function Reseller() {
   const { data: productsData } = trpc.products.list.useQuery(undefined);
   const products: Product[] = (productsData as any) || [];
 
+  const utils = trpc.useContext();
+
   const ordersQuery = trpc.customer.myOrders.useQuery(undefined, {
     enabled: isAuthenticated,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   });
 
   // Sincronizar orders con useEffect
@@ -474,6 +478,8 @@ export default function Reseller() {
         setUser({ ...user, balance: user.balance - instantTotal });
         toast.success(data.message);
         setCart(prev => prev.filter(i => i.orderType !== "instant"));
+        // Refrescar las órdenes para mostrar la compra recién realizada
+        utils.customer.myOrders.invalidate();
       }
     },
     onError: (error) => toast.error(error.message || "Error al procesar el pedido"),
