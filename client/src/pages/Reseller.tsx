@@ -377,7 +377,9 @@ function FloatingCart({ cart, onRemove, onUpdateQty, onCheckout, onClear, whatsa
 // Main Component
 // ─────────────────────────────────────────────
 export default function Reseller() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // Inicializar desde localStorage para evitar flash de login al recargar
+  const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem("resellerToken"));
+  const [isVerifying, setIsVerifying] = useState(() => !!localStorage.getItem("resellerToken"));
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [user, setUser] = useState<ResellerUser | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -424,7 +426,8 @@ export default function Reseller() {
 
   const meQuery = trpc.customer.me.useQuery(undefined, {
     enabled: !!localStorage.getItem("resellerToken"),
-    retry: false,
+    retry: 1,
+    retryDelay: 1000,
   });
 
   // Sincronizar user con useEffect
@@ -432,9 +435,17 @@ export default function Reseller() {
     if (meQuery.data) {
       setUser(meQuery.data as any);
       setIsAuthenticated(true);
+      setIsVerifying(false);
     }
     if (meQuery.error) {
-      localStorage.removeItem("resellerToken");
+      // Solo desloguear si el token es realmente inválido (UNAUTHORIZED)
+      // No desloguear por errores de red transitorios
+      const isUnauthorized = (meQuery.error as any)?.data?.code === "UNAUTHORIZED";
+      if (isUnauthorized) {
+        localStorage.removeItem("resellerToken");
+        setIsAuthenticated(false);
+      }
+      setIsVerifying(false);
     }
   }, [meQuery.data, meQuery.error]);
 
@@ -473,6 +484,7 @@ export default function Reseller() {
   const handleLogout = () => {
     localStorage.removeItem("resellerToken");
     setIsAuthenticated(false);
+    setIsVerifying(false);
     setUser(null);
     setCart([]);
     setEmail(""); setPassword("");
@@ -527,6 +539,20 @@ export default function Reseller() {
   });
 
   const recentOrders = [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
+
+  // ─────────────────────────────────────────────
+  // LOADING SCREEN (verificando token al recargar)
+  // ─────────────────────────────────────────────
+  if (isVerifying) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-700 flex items-center justify-center">
+        <div className="text-center text-white">
+          <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-lg font-semibold">Cargando tu sesión...</p>
+        </div>
+      </div>
+    );
+  }
 
   // ─────────────────────────────────────────────
   // LOGIN / REGISTER SCREEN
