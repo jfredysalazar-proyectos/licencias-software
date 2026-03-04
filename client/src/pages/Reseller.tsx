@@ -383,9 +383,6 @@ export default function Reseller() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [user, setUser] = useState<ResellerUser | null>(null);
-  // orders: se deriva directamente de ordersQuery.data (sin estado intermedio)
-  // Usar estado intermedio causaba que el useEffect no se disparara si los datos
-  // en caché no cambiaban de referencia, dejando el array siempre vacío.
   const [cart, setCart] = useState<CartItem[]>([]);
   const [activeTab, setActiveTab] = useState<"dashboard" | "store">("dashboard");
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -433,17 +430,26 @@ export default function Reseller() {
     }
   }, [meQuery.data, meQuery.error]);
 
-  // Órdenes del cliente
-  // IMPORTANTE: No usar enabled:isAuthenticated porque React Query no re-ejecuta
-  // automáticamente cuando enabled cambia de false→true en un componente ya montado.
-  // En cambio, la query siempre está activa: si no hay token, el servidor devuelve
-  // error y ordersQuery.data será undefined (orders=[]).
-  // retry:false evita reintentos que podrían causar problemas de auth.
-  const ordersQuery = trpc.customer.myOrders.useQuery(undefined, {
-    retry: false,
-    refetchOnWindowFocus: false,
-    staleTime: 30000, // 30 segundos de caché
-  });
+  // Órdenes: fetch directo (no React Query) para evitar problemas de caché/estado
+  const [orders, setOrders] = useState<Order[]>([]);
+
+  const fetchOrders = async () => {
+    const token = localStorage.getItem("resellerToken");
+    if (!token) return;
+    try {
+      const res = await fetch("/api/trpc/customer.myOrders?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%7D%7D", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      const data = json?.[0]?.result?.data?.json;
+      if (Array.isArray(data)) setOrders(data);
+    } catch {}
+  };
+
+  // Cargar órdenes cuando el usuario se autentica
+  useEffect(() => {
+    if (isAuthenticated) fetchOrders();
+  }, [isAuthenticated]);
 
   // Productos: usar data directamente del hook
   const { data: productsData } = trpc.products.list.useQuery(undefined);
@@ -456,9 +462,7 @@ export default function Reseller() {
       setUser(data.customer as any);
       setIsAuthenticated(true);
       toast.success("¡Cuenta creada exitosamente!");
-      setTimeout(() => {
-        utils.customer.myOrders.reset();
-      }, 300);
+      setTimeout(() => fetchOrders(), 300);
     },
     onError: (error) => toast.error(error.message || "Error al registrarse"),
   });
@@ -469,12 +473,7 @@ export default function Reseller() {
       setUser(data.customer as any);
       setIsAuthenticated(true);
       toast.success("¡Bienvenido!");
-      // reset() limpia el estado de error de la query (a diferencia de invalidate()
-      // que no funciona si la query está en estado 'error' con retry:false)
-      // Luego refetch() la ejecuta inmediatamente con el token ya guardado
-      setTimeout(() => {
-        utils.customer.myOrders.reset();
-      }, 300);
+      setTimeout(() => fetchOrders(), 300);
     },
     onError: (error) => toast.error(error.message || "Error al iniciar sesión"),
   });
@@ -490,7 +489,7 @@ export default function Reseller() {
         toast.success(data.message);
         setCart(prev => prev.filter(i => i.orderType !== "instant"));
         // Refrescar las órdenes para mostrar la compra recién realizada
-        utils.customer.myOrders.invalidate();
+        fetchOrders();
       }
     },
     onError: (error) => toast.error(error.message || "Error al procesar el pedido"),
@@ -544,9 +543,6 @@ export default function Reseller() {
   const resellerProducts = products.filter((p) => Number(p.showInReseller) === 1);
   const instantProducts = resellerProducts.filter(p => !p.orderType || p.orderType === "instant");
   const onDemandProducts = resellerProducts.filter(p => p.orderType === "on-demand");
-
-  // Usar ordersQuery.data directamente (sin estado intermedio que puede quedar desincronizado)
-  const orders: Order[] = (ordersQuery.data as any) || [];
 
   // ── Expiring accounts ──
   const now = new Date();
