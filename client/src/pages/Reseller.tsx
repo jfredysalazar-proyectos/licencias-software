@@ -456,8 +456,9 @@ export default function Reseller() {
       setUser(data.customer as any);
       setIsAuthenticated(true);
       toast.success("¡Cuenta creada exitosamente!");
-      // Forzar carga de órdenes inmediatamente tras registro
-      setTimeout(() => utils.customer.myOrders.invalidate(), 200);
+      setTimeout(() => {
+        utils.customer.myOrders.reset();
+      }, 300);
     },
     onError: (error) => toast.error(error.message || "Error al registrarse"),
   });
@@ -468,8 +469,12 @@ export default function Reseller() {
       setUser(data.customer as any);
       setIsAuthenticated(true);
       toast.success("¡Bienvenido!");
-      // Forzar carga de órdenes inmediatamente tras login
-      setTimeout(() => utils.customer.myOrders.invalidate(), 200);
+      // reset() limpia el estado de error de la query (a diferencia de invalidate()
+      // que no funciona si la query está en estado 'error' con retry:false)
+      // Luego refetch() la ejecuta inmediatamente con el token ya guardado
+      setTimeout(() => {
+        utils.customer.myOrders.reset();
+      }, 300);
     },
     onError: (error) => toast.error(error.message || "Error al iniciar sesión"),
   });
