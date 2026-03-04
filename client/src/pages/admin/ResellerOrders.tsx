@@ -104,7 +104,8 @@ export default function ResellerOrders() {
 
   const orders: Order[] = (ordersQuery.data as any) || [];
 
-  const filtered = orders.filter((o) => {
+  const filtered = orders
+    .filter((o) => {
     const matchSearch =
       !search ||
       o.customerName?.toLowerCase().includes(search.toLowerCase()) ||
@@ -113,6 +114,13 @@ export default function ResellerOrders() {
       parseItems(o.items).some((i) => i.productName.toLowerCase().includes(search.toLowerCase()));
     const matchStatus = statusFilter === "all" || o.status === statusFilter;
     return matchSearch && matchStatus;
+  })
+  .sort((a, b) => {
+    // Sin fecha al final; con fecha: más próxima a vencer primero
+    if (!a.expiresAt && !b.expiresAt) return 0;
+    if (!a.expiresAt) return 1;
+    if (!b.expiresAt) return -1;
+    return new Date(a.expiresAt).getTime() - new Date(b.expiresAt).getTime();
   });
 
   const openEdit = (order: Order) => {
