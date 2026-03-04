@@ -546,12 +546,14 @@ export default function Reseller() {
 
   // ── Expiring accounts ──
   const now = new Date();
-  const expiringOrders = orders.filter((o) => {
-    if (!o.expiresAt) return false;
-    const exp = new Date(o.expiresAt);
-    const diffDays = Math.ceil((exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    return diffDays <= 7 && diffDays >= 0;
-  });
+  const expiringOrders = orders
+    .filter((o) => {
+      if (!o.expiresAt) return false;
+      const exp = new Date(o.expiresAt);
+      const diffDays = Math.ceil((exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      return diffDays <= 7 && diffDays >= 0;
+    })
+    .sort((a, b) => new Date(a.expiresAt!).getTime() - new Date(b.expiresAt!).getTime());
 
   const recentOrders = [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
 
