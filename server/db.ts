@@ -1,4 +1,4 @@
-import { eq, like, and, desc, sql, isNotNull } from "drizzle-orm";
+import { eq, like, and, desc, asc, sql, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, categories, Category, InsertCategory, products, Product, InsertProduct, orders, Order, InsertOrder, admins, Admin, InsertAdmin, settings, Setting, InsertSetting, customers, Customer, InsertCustomer, productVariants, ProductVariant, InsertProductVariant, variantOptions, VariantOption, InsertVariantOption, productSkus, ProductSku, InsertProductSku, soldLicenses, SoldLicense, InsertSoldLicense, paymentMethods, PaymentMethod, InsertPaymentMethod } from "../drizzle/schema";
 import { ENV } from './_core/env';
@@ -661,7 +661,7 @@ export async function getAllSoldLicenses(page?: number, pageSize?: number): Prom
   const totalResult = await db.select({ count: sql<number>`count(*)` }).from(soldLicenses);
   const total = Number(totalResult[0]?.count || 0);
 
-  let query = db.select().from(soldLicenses).orderBy(desc(soldLicenses.createdAt));
+  let query = db.select().from(soldLicenses).orderBy(asc(soldLicenses.expirationDate));
 
   if (page !== undefined && pageSize !== undefined) {
     const offset = (page - 1) * pageSize;
