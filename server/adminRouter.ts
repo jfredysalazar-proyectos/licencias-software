@@ -232,6 +232,7 @@ export const adminRouter = router({
           orderType: z.enum(["instant", "on-demand"]).default("instant"),
           showInReseller: z.number().min(0).max(1).default(0),
           showInPublic: z.number().min(0).max(1).default(1),
+          resellerDescription: z.string().optional(),
         })
       )
       .mutation(async ({ input }) => {
@@ -258,6 +259,7 @@ export const adminRouter = router({
           orderType: z.enum(["instant", "on-demand"]).optional(),
           showInReseller: z.number().min(0).max(1).optional(),
           showInPublic: z.number().min(0).max(1).optional(),
+          resellerDescription: z.string().optional(),
         })
       )
       .mutation(async ({ input }) => {

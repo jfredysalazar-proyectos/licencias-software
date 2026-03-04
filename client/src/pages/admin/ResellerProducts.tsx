@@ -38,6 +38,7 @@ type Product = {
   orderType?: string;
   showInReseller?: number;
   showInPublic?: number;
+  resellerDescription?: string | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -55,6 +56,7 @@ const defaultForm = {
   orderType: "instant",
   showInReseller: "0",
   showInPublic: "1",
+  resellerDescription: "",
 };
 
 export default function AdminResellerProducts() {
@@ -146,6 +148,7 @@ export default function AdminResellerProducts() {
       orderType: p.orderType || "instant",
       showInReseller: String(p.showInReseller ?? 0),
       showInPublic: String(p.showInPublic ?? 1),
+      resellerDescription: p.resellerDescription || "",
     });
     setImagePreview(p.imageUrl || null);
     setDialogOpen(true);
@@ -183,6 +186,7 @@ export default function AdminResellerProducts() {
       orderType: formData.orderType as "instant" | "on-demand",
       showInReseller: parseInt(formData.showInReseller),
       showInPublic: parseInt(formData.showInPublic),
+      resellerDescription: formData.resellerDescription || undefined,
     };
     if (editingProduct) {
       updateMutation.mutate({ id: editingProduct.id, ...payload });
@@ -609,6 +613,24 @@ export default function AdminResellerProducts() {
                   placeholder="Descripción del producto..."
                   rows={3}
                 />
+              </div>
+
+              <div className="col-span-2">
+                <Label className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-blue-600" />
+                  Descripción Resellers
+                  <span className="text-xs font-normal text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Solo visible en tienda reseller</span>
+                </Label>
+                <Textarea
+                  value={formData.resellerDescription}
+                  onChange={(e) => setFormData((f) => ({ ...f, resellerDescription: e.target.value }))}
+                  placeholder="Descripción personalizada para los revendedores (precios de costo, instrucciones de reventa, márgenes sugeridos, etc.)..."
+                  rows={5}
+                  className="mt-1 border-blue-200 focus:border-blue-400"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  Este texto aparecerá en el popup de descripción de la tienda reseller. Si está vacío, se mostrará la descripción general.
+                </p>
               </div>
 
               <div className="col-span-2">

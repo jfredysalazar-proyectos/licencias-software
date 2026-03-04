@@ -35,6 +35,7 @@ interface Product {
   inStock: number;
   orderType?: string;
   showInReseller?: number;
+  resellerDescription?: string | null;
 }
 
 interface CartItem {
@@ -383,6 +384,7 @@ export default function Reseller() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [activeTab, setActiveTab] = useState<"dashboard" | "store">("dashboard");
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [descModal, setDescModal] = useState<Product | null>(null);
 
   // Form states
   const [email, setEmail] = useState("");
@@ -765,7 +767,7 @@ export default function Reseller() {
                         addToCart(product, "instant");
                       }}
                       onAddCart={() => addToCart(product, "instant")}
-                      onInfo={() => toast.info(product.shortDescription || product.description || product.name)}
+                      onInfo={() => setDescModal(product)}
                     />
                   ))}
                 </div>
@@ -788,7 +790,7 @@ export default function Reseller() {
                       isOnDemand={true}
                       onBuy={() => addToCart(product, "on-demand")}
                       onAddCart={() => addToCart(product, "on-demand")}
-                      onInfo={() => toast.info(product.shortDescription || product.description || product.name)}
+                      onInfo={() => setDescModal(product)}
                     />
                   ))}
                 </div>
@@ -805,6 +807,60 @@ export default function Reseller() {
           </div>
         )}
       </main>
+
+      {/* ── Description Modal ── */}
+      {descModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ backgroundColor: "rgba(0,0,0,0.6)" }}
+          onClick={() => setDescModal(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal header */}
+            <div className="flex items-start justify-between p-5 border-b border-gray-100">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                {descModal.imageUrl && (
+                  <img
+                    src={descModal.imageUrl}
+                    alt={descModal.name}
+                    className="w-12 h-12 rounded-lg object-cover flex-shrink-0 border border-gray-200"
+                  />
+                )}
+                <div className="min-w-0">
+                  <h3 className="font-bold text-gray-900 text-base leading-tight">{descModal.name}</h3>
+                  <p className="text-blue-700 font-semibold text-sm mt-0.5">
+                    $ {(descModal.resellerPrice ?? descModal.basePrice).toLocaleString("es-CO", { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setDescModal(null)}
+                className="ml-3 flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            {/* Modal body */}
+            <div className="p-5 overflow-y-auto flex-1">
+              <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">
+                {descModal.resellerDescription || descModal.description || "Sin descripci\u00f3n disponible."}
+              </p>
+            </div>
+            {/* Modal footer */}
+            <div className="p-4 border-t border-gray-100">
+              <button
+                onClick={() => setDescModal(null)}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Floating Cart ── */}
       <FloatingCart

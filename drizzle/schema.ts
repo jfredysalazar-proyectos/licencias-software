@@ -81,6 +81,7 @@ export const products = mysqlTable("products", {
   orderType: varchar("orderType", { length: 20 }).notNull().default("instant"), // 'instant' or 'on-demand'
   showInReseller: int("showInReseller").notNull().default(0), // 0 or 1 - whether to show in reseller store
   showInPublic: int("showInPublic").notNull().default(1), // 0 or 1 - whether to show in public store (default 1)
+  resellerDescription: text("resellerDescription"), // Custom description shown only in reseller store
   createdAt: timestamp("createdAt").notNull().$defaultFn(() => new Date()),
   updatedAt: timestamp("updatedAt").notNull().$defaultFn(() => new Date()),
 });
