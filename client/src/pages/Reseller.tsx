@@ -760,9 +760,15 @@ export default function Reseller() {
                         const exp = new Date(o.expiresAt!);
                         const diffDays = Math.ceil((exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
                         return (
-                          <tr key={o.id} className="hover:bg-gray-50">
-                            <td className="px-4 py-3 font-medium">{items[0]?.productName || `Pedido #${o.id}`}</td>
-                            <td className="px-4 py-3 text-gray-500">—</td>
+                         <tr key={o.id} className="hover:bg-gray-50">
+                             <td className="px-4 py-3 font-medium">{items[0]?.productName || `Pedido #${o.id}`}</td>
+                             <td className="px-4 py-3">
+                               {items[0]?.accountData ? (
+                                 <pre className="text-xs text-gray-700 bg-gray-50 border border-gray-200 rounded p-2 whitespace-pre-wrap break-words max-w-xs font-mono">{items[0].accountData}</pre>
+                               ) : (
+                                 <span className="text-gray-400 text-xs italic">Sin datos</span>
+                               )}
+                             </td>
                             <td className="px-4 py-3 text-gray-600">{new Date(o.createdAt).toLocaleDateString("es-CO")}</td>
                             <td className="px-4 py-3 text-gray-600">{exp.toLocaleDateString("es-CO")}</td>
                             <td className="px-4 py-3">
