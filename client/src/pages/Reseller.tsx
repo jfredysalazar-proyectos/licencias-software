@@ -433,14 +433,16 @@ export default function Reseller() {
     }
   }, [meQuery.data, meQuery.error]);
 
-  // Órdenes del cliente (se activa cuando isAuthenticated=true)
+  // Órdenes del cliente
+  // IMPORTANTE: No usar enabled:isAuthenticated porque React Query no re-ejecuta
+  // automáticamente cuando enabled cambia de false→true en un componente ya montado.
+  // En cambio, la query siempre está activa: si no hay token, el servidor devuelve
+  // error y ordersQuery.data será undefined (orders=[]).
+  // retry:false evita reintentos que podrían causar problemas de auth.
   const ordersQuery = trpc.customer.myOrders.useQuery(undefined, {
-    enabled: isAuthenticated,
-    refetchOnMount: true,
+    retry: false,
     refetchOnWindowFocus: false,
-    // staleTime: 0 asegura que cuando enabled cambia de false→true (post-login)
-    // React Query ejecute la query inmediatamente (datos siempre "stale")
-    staleTime: 0,
+    staleTime: 30000, // 30 segundos de caché
   });
 
   // Productos: usar data directamente del hook
