@@ -377,9 +377,10 @@ function FloatingCart({ cart, onRemove, onUpdateQty, onCheckout, onClear, whatsa
 // Main Component
 // ─────────────────────────────────────────────
 export default function Reseller() {
-  // Inicializar desde localStorage para evitar flash de login al recargar
-  const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem("resellerToken"));
-  const [isVerifying, setIsVerifying] = useState(() => !!localStorage.getItem("resellerToken"));
+  // hasToken: hay token en localStorage al montar (para saber si verificar)
+  const [hasToken] = useState(() => !!localStorage.getItem("resellerToken"));
+  // isAuthenticated: true solo cuando tenemos datos del usuario confirmados
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [user, setUser] = useState<ResellerUser | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -424,10 +425,10 @@ export default function Reseller() {
     onError: (error) => toast.error(error.message || "Error al iniciar sesión"),
   });
 
+  // Verificar token existente UNA SOLA VEZ al montar (solo si había token)
+  // NO se ejecuta si el usuario acaba de hacer login (hasToken=false en ese caso)
   const meQuery = trpc.customer.me.useQuery(undefined, {
-    // Solo ejecutar una vez al montar si hay token guardado
-    enabled: !!localStorage.getItem("resellerToken"),
-    // Deshabilitar todos los refetches automáticos para evitar deslogueos periódicos
+    enabled: hasToken && !isAuthenticated,
     retry: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
@@ -435,23 +436,16 @@ export default function Reseller() {
     staleTime: Infinity,
   });
 
-  // Sincronizar user con useEffect
+  // Procesar resultado de verificación de token existente
   useEffect(() => {
     if (meQuery.data) {
       setUser(meQuery.data as any);
       setIsAuthenticated(true);
-      setIsVerifying(false);
     }
     if (meQuery.error) {
-      // Solo desloguear si el token es realmente inválido (UNAUTHORIZED)
-      // No desloguear por errores de red transitorios
-      const errCode = (meQuery.error as any)?.data?.code;
-      if (errCode === "UNAUTHORIZED") {
-        localStorage.removeItem("resellerToken");
-        setIsAuthenticated(false);
-      }
-      // En cualquier caso, dejar de mostrar el spinner
-      setIsVerifying(false);
+      // Token inválido o expirado: limpiar
+      localStorage.removeItem("resellerToken");
+      setIsAuthenticated(false);
     }
   }, [meQuery.data, meQuery.error]);
 
@@ -490,7 +484,6 @@ export default function Reseller() {
   const handleLogout = () => {
     localStorage.removeItem("resellerToken");
     setIsAuthenticated(false);
-    setIsVerifying(false);
     setUser(null);
     setCart([]);
     setEmail(""); setPassword("");
@@ -548,8 +541,9 @@ export default function Reseller() {
 
   // ─────────────────────────────────────────────
   // LOADING SCREEN (verificando token al recargar)
+  // Mostrar spinner solo si había token y aún no se ha verificado
   // ─────────────────────────────────────────────
-  if (isVerifying) {
+  if (hasToken && !isAuthenticated && meQuery.isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-700 flex items-center justify-center">
         <div className="text-center text-white">
