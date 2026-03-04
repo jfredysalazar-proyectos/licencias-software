@@ -383,7 +383,9 @@ export default function Reseller() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [user, setUser] = useState<ResellerUser | null>(null);
-  const [orders, setOrders] = useState<Order[]>([]);
+  // orders: se deriva directamente de ordersQuery.data (sin estado intermedio)
+  // Usar estado intermedio causaba que el useEffect no se disparara si los datos
+  // en caché no cambiaban de referencia, dejando el array siempre vacío.
   const [cart, setCart] = useState<CartItem[]>([]);
   const [activeTab, setActiveTab] = useState<"dashboard" | "store">("dashboard");
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -440,13 +442,6 @@ export default function Reseller() {
     // React Query ejecute la query inmediatamente (datos siempre "stale")
     staleTime: 0,
   });
-
-  // Sincronizar orders con estado local
-  useEffect(() => {
-    if (ordersQuery.data) {
-      setOrders(ordersQuery.data as any);
-    }
-  }, [ordersQuery.data]);
 
   // Productos: usar data directamente del hook
   const { data: productsData } = trpc.products.list.useQuery(undefined);
@@ -542,6 +537,9 @@ export default function Reseller() {
   const resellerProducts = products.filter((p) => Number(p.showInReseller) === 1);
   const instantProducts = resellerProducts.filter(p => !p.orderType || p.orderType === "instant");
   const onDemandProducts = resellerProducts.filter(p => p.orderType === "on-demand");
+
+  // Usar ordersQuery.data directamente (sin estado intermedio que puede quedar desincronizado)
+  const orders: Order[] = (ordersQuery.data as any) || [];
 
   // ── Expiring accounts ──
   const now = new Date();
