@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Upload, Store, Zap, Clock, Package, Eye, EyeOff, ToggleLeft, ToggleRight } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, Store, Zap, Clock, Package, Eye, EyeOff, Globe, Users } from "lucide-react";
 
 type Product = {
   id: number;
@@ -37,6 +37,7 @@ type Product = {
   platforms: string | null;
   orderType?: string;
   showInReseller?: number;
+  showInPublic?: number;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -53,6 +54,7 @@ const defaultForm = {
   inStock: "1",
   orderType: "instant",
   showInReseller: "0",
+  showInPublic: "1",
 };
 
 export default function AdminResellerProducts() {
@@ -64,7 +66,7 @@ export default function AdminResellerProducts() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [filterView, setFilterView] = useState<"all" | "reseller-only">("all");
+  const [filterView, setFilterView] = useState<"all" | "reseller-only" | "public-only" | "both">("all");
   const [filterType, setFilterType] = useState<"all" | "instant" | "on-demand">("all");
   const [formData, setFormData] = useState(defaultForm);
 
@@ -107,8 +109,8 @@ export default function AdminResellerProducts() {
     onError: (e) => toast.error(e.message || "Error al eliminar producto"),
   });
 
-  // Quick toggle showInReseller without opening dialog
-  const toggleResellerMutation = trpc.admin.products.update.useMutation({
+  // Quick toggle without opening dialog
+  const toggleMutation = trpc.admin.products.update.useMutation({
     onSuccess: () => {
       utils.admin.products.list.invalidate();
     },
@@ -143,6 +145,7 @@ export default function AdminResellerProducts() {
       inStock: String(p.inStock),
       orderType: p.orderType || "instant",
       showInReseller: String(p.showInReseller ?? 0),
+      showInPublic: String(p.showInPublic ?? 1),
     });
     setImagePreview(p.imageUrl || null);
     setDialogOpen(true);
@@ -179,6 +182,7 @@ export default function AdminResellerProducts() {
       inStock: parseInt(formData.inStock),
       orderType: formData.orderType as "instant" | "on-demand",
       showInReseller: parseInt(formData.showInReseller),
+      showInPublic: parseInt(formData.showInPublic),
     };
     if (editingProduct) {
       updateMutation.mutate({ id: editingProduct.id, ...payload });
@@ -187,18 +191,36 @@ export default function AdminResellerProducts() {
     }
   };
 
+  // Helper: get visibility label for a product
+  const getVisibilityLabel = (p: Product) => {
+    const inPublic = (p.showInPublic ?? 1) === 1;
+    const inReseller = (p.showInReseller ?? 0) === 1;
+    if (inPublic && inReseller) return { label: "Ambas tiendas", color: "bg-purple-600 text-white" };
+    if (inPublic) return { label: "Solo pública", color: "bg-green-600 text-white" };
+    if (inReseller) return { label: "Solo reseller", color: "bg-blue-600 text-white" };
+    return { label: "Oculto", color: "bg-gray-400 text-white" };
+  };
+
   // Filter products
   const filteredProducts = (allProducts as Product[]).filter((p) => {
-    const matchReseller = filterView === "all" || (filterView === "reseller-only" && p.showInReseller === 1);
-    const matchType =
+    const inPublic = (p.showInPublic ?? 1) === 1;
+    const inReseller = (p.showInReseller ?? 0) === 1;
+    if (filterView === "reseller-only") return inReseller && !inPublic;
+    if (filterView === "public-only") return inPublic && !inReseller;
+    if (filterView === "both") return inPublic && inReseller;
+    return true; // "all"
+  }).filter((p) => {
+    return (
       filterType === "all" ||
       (filterType === "instant" && (!p.orderType || p.orderType === "instant")) ||
-      (filterType === "on-demand" && p.orderType === "on-demand");
-    return matchReseller && matchType;
+      (filterType === "on-demand" && p.orderType === "on-demand")
+    );
   });
 
-  const resellerCount = (allProducts as Product[]).filter((p) => p.showInReseller === 1).length;
-  const isLoading = createMutation.isLoading || updateMutation.isLoading;
+  const resellerCount = (allProducts as Product[]).filter((p) => (p.showInReseller ?? 0) === 1).length;
+  const publicCount = (allProducts as Product[]).filter((p) => (p.showInPublic ?? 1) === 1).length;
+  const bothCount = (allProducts as Product[]).filter((p) => (p.showInReseller ?? 0) === 1 && (p.showInPublic ?? 1) === 1).length;
+  const isLoading = createMutation.isPending || updateMutation.isPending;
 
   return (
     <AdminLayout>
@@ -212,7 +234,7 @@ export default function AdminResellerProducts() {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Productos Reseller</h1>
               <p className="text-sm text-gray-500">
-                {resellerCount} producto{resellerCount !== 1 ? "s" : ""} visible{resellerCount !== 1 ? "s" : ""} en la tienda reseller
+                {resellerCount} en tienda reseller · {publicCount} en tienda pública
               </p>
             </div>
           </div>
@@ -226,20 +248,21 @@ export default function AdminResellerProducts() {
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
           <Eye className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
           <div>
-            <p className="text-sm font-medium text-blue-800">Control de visibilidad en tienda reseller</p>
+            <p className="text-sm font-medium text-blue-800">Control de visibilidad por tienda</p>
             <p className="text-xs text-blue-600 mt-0.5">
-              Usa el botón <strong>ojo</strong> en cada producto para activar/desactivar su visibilidad en la tienda de resellers. 
-              Solo los productos con el ojo activo aparecerán en <strong>/reseller → Tienda</strong>.
+              Cada producto puede aparecer en <strong>ambas tiendas</strong>, solo en la <strong>tienda pública</strong>, solo en la <strong>tienda reseller</strong>, o estar <strong>oculto</strong>. Edita el producto para configurar su visibilidad.
             </p>
           </div>
         </div>
 
         {/* Filter tabs */}
         <div className="flex flex-wrap gap-2 items-center border-b border-gray-200 pb-3">
-          <div className="flex gap-1">
+          <div className="flex gap-1 flex-wrap">
             {[
               { key: "all", label: "Todos", count: (allProducts as Product[]).length },
-              { key: "reseller-only", label: "En tienda reseller", count: resellerCount },
+              { key: "both", label: "Ambas tiendas", count: bothCount },
+              { key: "reseller-only", label: "Solo reseller", count: resellerCount - bothCount },
+              { key: "public-only", label: "Solo pública", count: publicCount - bothCount },
             ].map(({ key, label, count }) => (
               <button
                 key={key}
@@ -281,104 +304,91 @@ export default function AdminResellerProducts() {
 
         {/* Products Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-          {filteredProducts.map((product) => (
-            <div
-              key={product.id}
-              className={`bg-white rounded-xl border overflow-hidden hover:shadow-md transition-all ${
-                product.showInReseller === 1
-                  ? "border-blue-300 ring-1 ring-blue-200"
-                  : "border-gray-200 opacity-70"
-              }`}
-            >
-              {/* Image */}
-              <div className="relative h-32">
-                {product.imageUrl ? (
-                  <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-500 flex items-center justify-center">
-                    <Package className="h-8 w-8 text-gray-400" />
-                  </div>
-                )}
-                {/* Order type badge */}
-                <div className={`absolute top-2 left-2 text-xs font-semibold px-1.5 py-0.5 rounded-full flex items-center gap-1 ${
-                  product.orderType === "on-demand"
-                    ? "bg-orange-500 text-white"
-                    : "bg-green-500 text-white"
-                }`}>
-                  {product.orderType === "on-demand" ? <Clock className="h-2.5 w-2.5" /> : <Zap className="h-2.5 w-2.5" />}
-                  {product.orderType === "on-demand" ? "Pedido" : "Instant"}
-                </div>
-                {/* Reseller visibility badge */}
-                <div className={`absolute top-2 right-2 text-xs font-semibold px-1.5 py-0.5 rounded-full ${
-                  product.showInReseller === 1 ? "bg-blue-600 text-white" : "bg-gray-400 text-white"
-                }`}>
-                  {product.showInReseller === 1 ? "👁 Visible" : "🚫 Oculto"}
-                </div>
-              </div>
-
-              {/* Info */}
-              <div className="p-3">
-                <p className="text-xs font-semibold text-gray-800 truncate">{product.name}</p>
-                <p className="text-xs text-blue-700 font-bold mt-0.5">
-                  ${(product.resellerPrice || product.basePrice).toLocaleString("es-CO")}
-                </p>
-                {product.resellerPrice && (
-                  <p className="text-xs text-gray-400 line-through">${product.basePrice.toLocaleString("es-CO")}</p>
-                )}
-              </div>
-
-              {/* Actions */}
-              <div className="px-3 pb-3 flex gap-1.5">
-                {/* Toggle reseller visibility */}
-                <button
-                  onClick={() => {
-                    toggleResellerMutation.mutate({
-                      id: product.id,
-                      showInReseller: product.showInReseller === 1 ? 0 : 1,
-                    });
-                  }}
-                  title={product.showInReseller === 1 ? "Ocultar de tienda reseller" : "Mostrar en tienda reseller"}
-                  className={`flex-1 text-xs font-medium py-1.5 rounded-lg flex items-center justify-center gap-1 transition-colors ${
-                    product.showInReseller === 1
-                      ? "bg-blue-600 hover:bg-blue-700 text-white"
-                      : "bg-gray-100 hover:bg-gray-200 text-gray-600"
-                  }`}
-                >
-                  {product.showInReseller === 1 ? (
-                    <><Eye className="h-3 w-3" /> Visible</>
+          {filteredProducts.map((product) => {
+            const vis = getVisibilityLabel(product);
+            return (
+              <div
+                key={product.id}
+                className={`bg-white rounded-xl border overflow-hidden shadow-sm transition-all ${
+                  (product.showInReseller === 1 || (product.showInPublic ?? 1) === 1)
+                    ? "border-blue-300 ring-1 ring-blue-200"
+                    : "border-gray-200 opacity-60"
+                }`}
+              >
+                {/* Image */}
+                <div className="relative h-32">
+                  {product.imageUrl ? (
+                    <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
                   ) : (
-                    <><EyeOff className="h-3 w-3" /> Oculto</>
+                    <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-500 flex items-center justify-center">
+                      <Package className="h-8 w-8 text-gray-400" />
+                    </div>
                   )}
-                </button>
-                <button
-                  onClick={() => openEdit(product)}
-                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-1.5 rounded-lg transition-colors"
-                  title="Editar"
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  onClick={() => {
-                    if (confirm(`¿Eliminar "${product.name}"?`)) {
-                      deleteMutation.mutate({ id: product.id });
-                    }
-                  }}
-                  className="bg-red-50 hover:bg-red-100 text-red-600 p-1.5 rounded-lg transition-colors"
-                  title="Eliminar"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
+                  {/* Order type badge */}
+                  <div className={`absolute top-2 left-2 text-xs font-semibold px-1.5 py-0.5 rounded-full flex items-center gap-1 ${
+                    product.orderType === "on-demand"
+                      ? "bg-orange-500 text-white"
+                      : "bg-green-500 text-white"
+                  }`}>
+                    {product.orderType === "on-demand" ? <Clock className="h-2.5 w-2.5" /> : <Zap className="h-2.5 w-2.5" />}
+                    {product.orderType === "on-demand" ? "Pedido" : "Instant"}
+                  </div>
+                  {/* Visibility badge */}
+                  <div className={`absolute top-2 right-2 text-xs font-semibold px-1.5 py-0.5 rounded-full ${vis.color}`}>
+                    {vis.label}
+                  </div>
+                </div>
+
+                {/* Info */}
+                <div className="p-3">
+                  <p className="text-xs font-semibold text-gray-800 truncate">{product.name}</p>
+                  <p className="text-xs text-blue-700 font-bold mt-0.5">
+                    ${(product.resellerPrice || product.basePrice).toLocaleString("es-CO")}
+                  </p>
+                  {product.resellerPrice && (
+                    <p className="text-xs text-gray-400 line-through">${product.basePrice.toLocaleString("es-CO")}</p>
+                  )}
+                  {/* Visibility icons row */}
+                  <div className="flex gap-1 mt-1.5">
+                    <span title="Tienda pública" className={`flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded ${(product.showInPublic ?? 1) === 1 ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-400"}`}>
+                      <Globe className="h-3 w-3" />
+                    </span>
+                    <span title="Tienda reseller" className={`flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded ${(product.showInReseller ?? 0) === 1 ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-400"}`}>
+                      <Users className="h-3 w-3" />
+                    </span>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="px-3 pb-3 flex gap-1.5">
+                  <button
+                    onClick={() => openEdit(product)}
+                    className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-medium py-1.5 rounded-lg flex items-center justify-center gap-1 transition-colors"
+                    title="Editar visibilidad y datos"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    Editar
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (confirm(`¿Eliminar "${product.name}"?`)) {
+                        deleteMutation.mutate({ id: product.id });
+                      }
+                    }}
+                    className="bg-red-50 hover:bg-red-100 text-red-600 p-1.5 rounded-lg transition-colors"
+                    title="Eliminar"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           {filteredProducts.length === 0 && (
             <div className="col-span-full text-center py-16 text-gray-400">
               <Store className="h-12 w-12 mx-auto mb-3 opacity-40" />
               <p className="text-sm">No hay productos en esta vista.</p>
-              {filterView === "reseller-only" && (
-                <p className="text-xs mt-1 text-gray-400">Activa el ojo en los productos que quieres mostrar en la tienda reseller.</p>
-              )}
               <Button onClick={openCreate} variant="outline" className="mt-4 gap-2">
                 <Plus className="h-4 w-4" />
                 Crear primer producto
@@ -495,34 +505,100 @@ export default function AdminResellerProducts() {
                 </Select>
               </div>
 
-              {/* showInReseller toggle */}
+              {/* ── Visibility section ── */}
               <div className="col-span-2">
-                <Label>Visibilidad en tienda reseller</Label>
-                <div className="mt-2 flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setFormData((f) => ({ ...f, showInReseller: f.showInReseller === "1" ? "0" : "1" }))}
-                    className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none ${
-                      formData.showInReseller === "1" ? "bg-blue-600" : "bg-gray-300"
-                    }`}
+                <Label className="text-sm font-semibold text-gray-700 mb-3 block">Visibilidad del producto</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {/* showInPublic toggle */}
+                  <div className={`rounded-xl border-2 p-4 cursor-pointer transition-all ${
+                    formData.showInPublic === "1"
+                      ? "border-green-400 bg-green-50"
+                      : "border-gray-200 bg-gray-50"
+                  }`}
+                    onClick={() => setFormData((f) => ({ ...f, showInPublic: f.showInPublic === "1" ? "0" : "1" }))}
                   >
-                    <span
-                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
-                        formData.showInReseller === "1" ? "translate-x-8" : "translate-x-1"
-                      }`}
-                    />
-                  </button>
-                  <span className={`text-sm font-medium ${formData.showInReseller === "1" ? "text-blue-700" : "text-gray-500"}`}>
-                    {formData.showInReseller === "1" ? (
-                      <span className="flex items-center gap-1"><Eye className="h-4 w-4" /> Visible en tienda reseller</span>
-                    ) : (
-                      <span className="flex items-center gap-1"><EyeOff className="h-4 w-4" /> Oculto en tienda reseller</span>
-                    )}
-                  </span>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Globe className={`h-5 w-5 ${formData.showInPublic === "1" ? "text-green-600" : "text-gray-400"}`} />
+                        <span className={`text-sm font-semibold ${formData.showInPublic === "1" ? "text-green-700" : "text-gray-500"}`}>
+                          Tienda Pública
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                          formData.showInPublic === "1" ? "bg-green-500" : "bg-gray-300"
+                        }`}
+                      >
+                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                          formData.showInPublic === "1" ? "translate-x-6" : "translate-x-1"
+                        }`} />
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      {formData.showInPublic === "1"
+                        ? "Visible en la tienda principal para todos los clientes"
+                        : "Oculto en la tienda pública"}
+                    </p>
+                  </div>
+
+                  {/* showInReseller toggle */}
+                  <div className={`rounded-xl border-2 p-4 cursor-pointer transition-all ${
+                    formData.showInReseller === "1"
+                      ? "border-blue-400 bg-blue-50"
+                      : "border-gray-200 bg-gray-50"
+                  }`}
+                    onClick={() => setFormData((f) => ({ ...f, showInReseller: f.showInReseller === "1" ? "0" : "1" }))}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Users className={`h-5 w-5 ${formData.showInReseller === "1" ? "text-blue-600" : "text-gray-400"}`} />
+                        <span className={`text-sm font-semibold ${formData.showInReseller === "1" ? "text-blue-700" : "text-gray-500"}`}>
+                          Tienda Reseller
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                          formData.showInReseller === "1" ? "bg-blue-500" : "bg-gray-300"
+                        }`}
+                      >
+                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                          formData.showInReseller === "1" ? "translate-x-6" : "translate-x-1"
+                        }`} />
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      {formData.showInReseller === "1"
+                        ? "Visible en la tienda de revendedores"
+                        : "Oculto en la tienda reseller"}
+                    </p>
+                  </div>
                 </div>
-                <p className="text-xs text-gray-400 mt-1">
-                  Activa esta opción para que el producto aparezca en la sección Tienda del área reseller.
-                </p>
+
+                {/* Summary label */}
+                <div className="mt-2 text-center">
+                  {formData.showInPublic === "1" && formData.showInReseller === "1" && (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-purple-700 bg-purple-100 px-3 py-1 rounded-full">
+                      <Eye className="h-3.5 w-3.5" /> Visible en ambas tiendas
+                    </span>
+                  )}
+                  {formData.showInPublic === "1" && formData.showInReseller === "0" && (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-green-700 bg-green-100 px-3 py-1 rounded-full">
+                      <Globe className="h-3.5 w-3.5" /> Solo en tienda pública
+                    </span>
+                  )}
+                  {formData.showInPublic === "0" && formData.showInReseller === "1" && (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-700 bg-blue-100 px-3 py-1 rounded-full">
+                      <Users className="h-3.5 w-3.5" /> Solo en tienda reseller
+                    </span>
+                  )}
+                  {formData.showInPublic === "0" && formData.showInReseller === "0" && (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-red-700 bg-red-100 px-3 py-1 rounded-full">
+                      <EyeOff className="h-3.5 w-3.5" /> Oculto en todas las tiendas
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div className="col-span-2">

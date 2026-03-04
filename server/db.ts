@@ -262,6 +262,8 @@ export async function createProduct(product: InsertProduct): Promise<number> {
   insertData.orderType = product.orderType || 'instant';
   // showInReseller: 0 (default) or 1
   insertData.showInReseller = product.showInReseller !== undefined ? product.showInReseller : 0;
+  // showInPublic: 1 (default) or 0
+  insertData.showInPublic = product.showInPublic !== undefined ? product.showInPublic : 1;
   
   console.log('[createProduct] SOLUCIÓN DEFINITIVA - Proporcionando valores explícitos para todos los campos');
   

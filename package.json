@@ -23,7 +23,8 @@
     "fix-customers": "tsx fix-customers-columns.ts",
     "fix-order-type": "tsx fix-order-type.ts",
     "fix-show-in-reseller": "tsx fix-show-in-reseller.ts",
-    "fix-orders-columns": "tsx fix-orders-columns.ts"
+    "fix-orders-columns": "tsx fix-orders-columns.ts",
+    "fix-show-in-public": "tsx fix-show-in-public.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.693.0",

@@ -38,7 +38,9 @@ export const appRouter = router({
 
   products: router({
     list: publicProcedure.query(async () => {
-      const products = await db.getAllProducts();
+      const allProducts = await db.getAllProducts();
+      // Solo mostrar productos visibles en la tienda pública (showInPublic = 1 o campo no existe aún)
+      const products = allProducts.filter(p => (p as any).showInPublic === undefined || (p as any).showInPublic === 1);
       // Normalizar platforms en todos los productos
       return products.map(product => {
         if (product.platforms) {

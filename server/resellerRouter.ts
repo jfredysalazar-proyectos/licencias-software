@@ -21,9 +21,10 @@ const resellerProcedure = publicProcedure.use(async ({ ctx, next }) => {
 });
 
 export const resellerRouter = router({
-  // Get reseller products (with reseller prices)
+  // Get reseller products (with reseller prices) - only those with showInReseller=1
   products: publicProcedure.query(async () => {
-    const products = await db.getAllProducts();
+    const allProducts = await db.getAllProducts();
+    const products = allProducts.filter(p => (p as any).showInReseller === 1);
     return products.map((product) => ({
       ...product,
       displayPrice: product.resellerPrice || product.basePrice,
