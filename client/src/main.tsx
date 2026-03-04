@@ -14,9 +14,13 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
   if (!(error instanceof TRPCClientError)) return;
   if (typeof window === "undefined") return;
 
+  // Solo redirigir al login OAuth si es el mensaje específico del admin
+  // No redirigir por errores de autenticación del reseller/customer
   const isUnauthorized = error.message === UNAUTHED_ERR_MSG;
-
   if (!isUnauthorized) return;
+
+  // No redirigir si estamos en la página del reseller (tiene su propio auth)
+  if (window.location.pathname.startsWith("/reseller")) return;
 
   window.location.href = getLoginUrl();
 };

@@ -425,9 +425,14 @@ export default function Reseller() {
   });
 
   const meQuery = trpc.customer.me.useQuery(undefined, {
+    // Solo ejecutar una vez al montar si hay token guardado
     enabled: !!localStorage.getItem("resellerToken"),
-    retry: 1,
-    retryDelay: 1000,
+    // Deshabilitar todos los refetches automáticos para evitar deslogueos periódicos
+    retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    staleTime: Infinity,
   });
 
   // Sincronizar user con useEffect
@@ -440,11 +445,12 @@ export default function Reseller() {
     if (meQuery.error) {
       // Solo desloguear si el token es realmente inválido (UNAUTHORIZED)
       // No desloguear por errores de red transitorios
-      const isUnauthorized = (meQuery.error as any)?.data?.code === "UNAUTHORIZED";
-      if (isUnauthorized) {
+      const errCode = (meQuery.error as any)?.data?.code;
+      if (errCode === "UNAUTHORIZED") {
         localStorage.removeItem("resellerToken");
         setIsAuthenticated(false);
       }
+      // En cualquier caso, dejar de mostrar el spinner
       setIsVerifying(false);
     }
   }, [meQuery.data, meQuery.error]);
