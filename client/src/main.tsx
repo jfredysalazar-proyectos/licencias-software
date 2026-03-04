@@ -47,7 +47,10 @@ const trpcClient = trpc.createClient({
       url: "/api/trpc",
       transformer: superjson,
       fetch(input, init) {
-        // Get admin token and customer token from localStorage if exists
+        // Leer el token de localStorage en cada petición (dinámicamente)
+        // Esto es crítico: el cliente tRPC se crea una sola vez al cargar la app,
+        // pero el token puede cambiar después (login/logout). Si se leyera al
+        // crear el cliente, las peticiones post-login no tendrían el token.
         const adminToken = localStorage.getItem('admin_token');
         const customerToken = localStorage.getItem('customerToken');
         const resellerToken = localStorage.getItem('resellerToken');
@@ -55,8 +58,8 @@ const trpcClient = trpc.createClient({
         // Priority: admin token > customer token > reseller token
         const token = adminToken || customerToken || resellerToken;
         
-        const headers = {
-          ...(init?.headers || {}),
+        const headers: Record<string, string> = {
+          ...(init?.headers as Record<string, string> || {}),
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         };
         
