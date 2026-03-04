@@ -756,15 +756,29 @@ export default function Reseller() {
                     ) : (
                       expiringOrders.map((o) => {
                         let items: any[] = [];
-                        try { items = JSON.parse(o.items); } catch {}
+                        try {
+                          // Intentar parsear el JSON; si falla por caracteres de control, limpiarlos
+                          try { items = JSON.parse(o.items); }
+                          catch { items = JSON.parse(o.items.replace(/[\x00-\x1F\x7F]/g, ' ')); }
+                        } catch {}
+                        // Decodificar accountData si está en base64
+                        const rawAccountData = items[0]?.accountData;
+                        let accountDataText = '';
+                        if (rawAccountData) {
+                          if (items[0]?.accountDataEncoded) {
+                            try { accountDataText = atob(rawAccountData); } catch { accountDataText = rawAccountData; }
+                          } else {
+                            accountDataText = rawAccountData;
+                          }
+                        }
                         const exp = new Date(o.expiresAt!);
                         const diffDays = Math.ceil((exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
                         return (
                          <tr key={o.id} className="hover:bg-gray-50">
                              <td className="px-4 py-3 font-medium">{items[0]?.productName || `Pedido #${o.id}`}</td>
                              <td className="px-4 py-3">
-                               {items[0]?.accountData ? (
-                                 <pre className="text-xs text-gray-700 bg-gray-50 border border-gray-200 rounded p-2 whitespace-pre-wrap break-words max-w-xs font-mono">{items[0].accountData}</pre>
+                               {accountDataText ? (
+                                 <pre className="text-xs text-gray-700 bg-gray-50 border border-gray-200 rounded p-2 whitespace-pre-wrap break-words max-w-xs font-mono">{accountDataText}</pre>
                                ) : (
                                  <span className="text-gray-400 text-xs italic">Sin datos</span>
                                )}
