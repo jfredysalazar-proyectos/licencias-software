@@ -404,26 +404,8 @@ export default function Reseller() {
     },
   ];
 
-  // ── tRPC ──
-  const registerMutation = trpc.customer.register.useMutation({
-    onSuccess: (data) => {
-      localStorage.setItem("resellerToken", data.token);
-      setUser(data.customer as any);
-      setIsAuthenticated(true);
-      toast.success("¡Cuenta creada exitosamente!");
-    },
-    onError: (error) => toast.error(error.message || "Error al registrarse"),
-  });
-
-  const loginMutation = trpc.customer.login.useMutation({
-    onSuccess: (data) => {
-      localStorage.setItem("resellerToken", data.token);
-      setUser(data.customer as any);
-      setIsAuthenticated(true);
-      toast.success("¡Bienvenido!");
-    },
-    onError: (error) => toast.error(error.message || "Error al iniciar sesión"),
-  });
+  // ── tRPC utils (debe ir primero para usarlo en mutations) ──
+  const utils = trpc.useContext();
 
   // Verificar token existente UNA SOLA VEZ al montar (solo si había token)
   // NO se ejecuta si el usuario acaba de hacer login (hasToken=false en ese caso)
@@ -449,24 +431,51 @@ export default function Reseller() {
     }
   }, [meQuery.data, meQuery.error]);
 
-  // Productos: usar data directamente del hook (sin onSuccess)
-  const { data: productsData } = trpc.products.list.useQuery(undefined);
-  const products: Product[] = (productsData as any) || [];
-
-  const utils = trpc.useContext();
-
+  // Órdenes del cliente (se activa cuando isAuthenticated=true)
   const ordersQuery = trpc.customer.myOrders.useQuery(undefined, {
     enabled: isAuthenticated,
     refetchOnMount: true,
     refetchOnWindowFocus: false,
+    // staleTime: 0 asegura que cuando enabled cambia de false→true (post-login)
+    // React Query ejecute la query inmediatamente (datos siempre "stale")
+    staleTime: 0,
   });
 
-  // Sincronizar orders con useEffect
+  // Sincronizar orders con estado local
   useEffect(() => {
     if (ordersQuery.data) {
       setOrders(ordersQuery.data as any);
     }
   }, [ordersQuery.data]);
+
+  // Productos: usar data directamente del hook
+  const { data: productsData } = trpc.products.list.useQuery(undefined);
+  const products: Product[] = (productsData as any) || [];
+
+  // ── tRPC mutations ──
+  const registerMutation = trpc.customer.register.useMutation({
+    onSuccess: (data) => {
+      localStorage.setItem("resellerToken", data.token);
+      setUser(data.customer as any);
+      setIsAuthenticated(true);
+      toast.success("¡Cuenta creada exitosamente!");
+      // Forzar carga de órdenes inmediatamente tras registro
+      setTimeout(() => utils.customer.myOrders.invalidate(), 200);
+    },
+    onError: (error) => toast.error(error.message || "Error al registrarse"),
+  });
+
+  const loginMutation = trpc.customer.login.useMutation({
+    onSuccess: (data) => {
+      localStorage.setItem("resellerToken", data.token);
+      setUser(data.customer as any);
+      setIsAuthenticated(true);
+      toast.success("¡Bienvenido!");
+      // Forzar carga de órdenes inmediatamente tras login
+      setTimeout(() => utils.customer.myOrders.invalidate(), 200);
+    },
+    onError: (error) => toast.error(error.message || "Error al iniciar sesión"),
+  });
 
   const { data: whatsappData } = trpc.settings.getWhatsapp.useQuery();
   const whatsappPhone = whatsappData?.phone ?? null;
