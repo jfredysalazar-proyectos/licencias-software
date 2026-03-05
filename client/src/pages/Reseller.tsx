@@ -484,12 +484,32 @@ export default function Reseller() {
   const createOrderMutation = trpc.reseller.createOrder.useMutation({
     onSuccess: (data) => {
       if (data.success && user) {
-        const instantTotal = cart.filter(i => i.orderType === "instant").reduce((s, i) => s + i.price * i.quantity, 0);
+        const instantItems = cart.filter(i => i.orderType === "instant");
+        const instantTotal = instantItems.reduce((s, i) => s + i.price * i.quantity, 0);
         setUser({ ...user, balance: user.balance - instantTotal });
         toast.success(data.message);
-        setCart(prev => prev.filter(i => i.orderType !== "instant"));
         // Refrescar las órdenes para mostrar la compra recién realizada
         fetchOrders();
+        // Abrir WhatsApp con los detalles del pedido
+        const phone = whatsappPhone?.replace(/\D/g, "") || "";
+        if (phone) {
+          const lines = instantItems.map(i => `• ${i.productName} x${i.quantity} = $${(i.price * i.quantity).toLocaleString("es-CO")} COP`);
+          const orderId = (data as any).orderId ? `#${(data as any).orderId}` : "";
+          const msg = [
+            `🛒 *NUEVO PEDIDO RESELLER ${orderId}*`,
+            `👤 *Reseller:* ${user.name || user.email || ""}`,
+            `📧 *Email:* ${user.email || ""}`,
+            `📱 *Teléfono:* ${user.phone || "No registrado"}`,
+            ``,
+            `*Productos:*`,
+            ...lines,
+            ``,
+            `💰 *Total pagado:* $${instantTotal.toLocaleString("es-CO")} COP`,
+            `✅ *Pago:* Descontado del saldo de la plataforma`,
+          ].join("\n");
+          window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, "_blank");
+        }
+        setCart(prev => prev.filter(i => i.orderType !== "instant"));
       }
     },
     onError: (error) => toast.error(error.message || "Error al procesar el pedido"),
