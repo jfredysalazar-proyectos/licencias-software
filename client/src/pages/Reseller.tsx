@@ -614,6 +614,7 @@ export default function Reseller() {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showAllRecent, setShowAllRecent] = useState(false);
   const [descModal, setDescModal] = useState<Product | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   // Form states
   const [email, setEmail] = useState("");
@@ -730,6 +731,12 @@ export default function Reseller() {
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000,
   });
+
+  const { data: paymentConfigData } = trpc.settings.getPaymentConfig.useQuery(undefined, {
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000,
+  });
+  const paymentConfig = paymentConfigData || { nequiQr: "", daviviendaQr: "", instructions: "", whatsappPhone: "", whatsappMessage: "" };
   // Videos de prueba por defecto si no hay tutoriales configurados
   const DEFAULT_TUTORIALS: Tutorial[] = [
     {
@@ -972,13 +979,42 @@ export default function Reseller() {
               <button className="hidden sm:flex p-2 text-gray-500 hover:text-blue-700 transition-colors">
                 <Bell className="h-5 w-5" />
               </button>
-              <div className="hidden sm:flex items-center gap-1.5 bg-blue-600 text-white rounded-lg px-3 py-1.5">
-                <DollarSign className="h-4 w-4" />
-                <span className="text-sm font-bold">${(user?.balance ?? 0).toLocaleString("es-CO")}</span>
+
+              {/* Saldo + Agregar Saldo */}
+              <div className="hidden sm:flex flex-col items-center">
+                <button
+                  onClick={() => setShowPaymentModal(true)}
+                  className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-lg px-3 py-1.5 transition-colors"
+                >
+                  <DollarSign className="h-4 w-4" />
+                  <span className="text-sm font-bold">${(user?.balance ?? 0).toLocaleString("es-CO")}</span>
+                </button>
+                <button
+                  onClick={() => setShowPaymentModal(true)}
+                  className="text-xs text-blue-600 hover:text-blue-800 font-medium mt-0.5 leading-none transition-colors"
+                >
+                  + Agregar Saldo
+                </button>
               </div>
-              <button className="hidden sm:flex p-2 text-gray-500 hover:text-blue-700 transition-colors">
+
+              {/* Botón QR = Agregar Saldo */}
+              <button
+                onClick={() => setShowPaymentModal(true)}
+                className="hidden sm:flex p-2 text-gray-500 hover:text-blue-700 transition-colors"
+                title="Agregar Saldo"
+              >
                 <QrCode className="h-5 w-5" />
               </button>
+
+              {/* Móvil: botón Agregar Saldo */}
+              <button
+                onClick={() => setShowPaymentModal(true)}
+                className="sm:hidden flex items-center gap-1 bg-blue-600 text-white rounded-lg px-2.5 py-1.5 text-xs font-semibold"
+              >
+                <DollarSign className="h-3.5 w-3.5" />
+                ${(user?.balance ?? 0).toLocaleString("es-CO")}
+              </button>
+
               <button onClick={handleLogout} className="p-2 text-gray-500 hover:text-red-500 transition-colors" title="Cerrar sesión">
                 <LogOut className="h-5 w-5" />
               </button>
@@ -1000,6 +1036,103 @@ export default function Reseller() {
         </div>
       </header>
 
+      {/* ────────────────────────────────
+          MODAL: AGREGAR SALDO
+      ──────────────────────────────── */}
+      {showPaymentModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ backgroundColor: "rgba(0,0,0,0.55)" }}
+          onClick={(e) => { if (e.target === e.currentTarget) setShowPaymentModal(false); }}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <div className="bg-green-100 rounded-xl p-2">
+                  <DollarSign className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <h2 className="font-bold text-gray-900 text-base">Agregar Saldo</h2>
+                  <p className="text-xs text-gray-500">Selecciona tu método de pago preferido</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-5 space-y-5">
+              {/* Instrucciones */}
+              {paymentConfig.instructions && (
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                  <p className="text-sm text-blue-800 leading-relaxed whitespace-pre-line">{paymentConfig.instructions}</p>
+                </div>
+              )}
+
+              {/* QR Cards */}
+              {(paymentConfig.nequiQr || paymentConfig.daviviendaQr) ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {paymentConfig.nequiQr && (
+                    <div className="border border-gray-200 rounded-2xl p-4 flex flex-col items-center gap-3 bg-white shadow-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-pink-500"></div>
+                        <span className="font-bold text-gray-800 text-sm">Nequi</span>
+                      </div>
+                      <img
+                        src={paymentConfig.nequiQr}
+                        alt="QR Nequi"
+                        className="w-full max-w-[180px] h-auto object-contain rounded-xl border border-gray-100"
+                      />
+                      <p className="text-xs text-gray-500 text-center">Escanea con tu app Nequi</p>
+                    </div>
+                  )}
+                  {paymentConfig.daviviendaQr && (
+                    <div className="border border-gray-200 rounded-2xl p-4 flex flex-col items-center gap-3 bg-white shadow-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-red-600"></div>
+                        <span className="font-bold text-gray-800 text-sm">Davivienda</span>
+                      </div>
+                      <img
+                        src={paymentConfig.daviviendaQr}
+                        alt="QR Davivienda"
+                        className="w-full max-w-[180px] h-auto object-contain rounded-xl border border-gray-100"
+                      />
+                      <p className="text-xs text-gray-500 text-center">Escanea con tu app Davivienda</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-400">
+                  <QrCode className="h-12 w-12 mx-auto mb-2 opacity-40" />
+                  <p className="text-sm">Métodos de pago no configurados aún.</p>
+                  <p className="text-xs mt-1">Contacta al administrador para más información.</p>
+                </div>
+              )}
+
+              {/* Botón Reportar Pago por WhatsApp */}
+              {(paymentConfig.whatsappPhone || "573334315646") && (
+                <a
+                  href={`https://wa.me/${paymentConfig.whatsappPhone || "573334315646"}?text=${encodeURIComponent(paymentConfig.whatsappMessage || `Hola, quiero reportar un pago para recargar mi saldo reseller.\n\nUsuario: ${user?.email || ""}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2.5 w-full bg-green-500 hover:bg-green-600 active:bg-green-700 text-white font-semibold py-3 rounded-xl transition-colors shadow-sm"
+                >
+                  <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current flex-shrink-0" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                  </svg>
+                  Reportar Pago por WhatsApp
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Main Content ── */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
 
@@ -1019,17 +1152,26 @@ export default function Reseller() {
               </div>
               <div className="flex flex-col gap-4">
                 {/* Saldo */}
-                <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex items-center justify-between">
-                  <div>
-                    <h3 className="text-blue-700 font-bold text-lg">Saldo Actual</h3>
-                    <p className="text-gray-500 text-xs mt-0.5">Mira tu saldo en tiempo real</p>
-                    <p className="text-2xl font-bold text-blue-700 mt-2">
-                      ${(user?.balance ?? 0).toLocaleString("es-CO", { minimumFractionDigits: 2 })}
-                    </p>
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-blue-700 font-bold text-lg">Saldo Actual</h3>
+                      <p className="text-gray-500 text-xs mt-0.5">Mira tu saldo en tiempo real</p>
+                      <p className="text-2xl font-bold text-blue-700 mt-2">
+                        ${(user?.balance ?? 0).toLocaleString("es-CO", { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                    <div className="w-16 h-16 bg-blue-700 rounded-full flex items-center justify-center shadow-lg">
+                      <DollarSign className="h-8 w-8 text-white" />
+                    </div>
                   </div>
-                  <div className="w-16 h-16 bg-blue-700 rounded-full flex items-center justify-center shadow-lg">
-                    <DollarSign className="h-8 w-8 text-white" />
-                  </div>
+                  <button
+                    onClick={() => setShowPaymentModal(true)}
+                    className="mt-3 w-full flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 active:bg-green-700 text-white text-sm font-semibold py-2 rounded-xl transition-colors"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Agregar Saldo
+                  </button>
                 </div>
                 {/* Compras recientes */}
                 <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex-1">

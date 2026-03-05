@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Save, Megaphone, Images, Trash2, Plus, GripVertical, Link, Upload, LayoutTemplate, BookOpen, Youtube } from "lucide-react";
+import { Save, Megaphone, Images, Trash2, Plus, GripVertical, Link, Upload, LayoutTemplate, BookOpen, Youtube, CreditCard, MessageSquare } from "lucide-react";
 
 // ─────────────────────────────────────────────
 // Types
@@ -523,6 +523,16 @@ export default function AdminSettings() {
   const [tutorials, setTutorials] = useState<Tutorial[]>([]);
   const [savingTutorials, setSavingTutorials] = useState(false);
 
+  // Payment config state
+  const [paymentConfig, setPaymentConfig] = useState({
+    nequiQr: "",
+    daviviendaQr: "",
+    instructions: "",
+    whatsappPhone: "",
+    whatsappMessage: "",
+  });
+  const [savingPayment, setSavingPayment] = useState(false);
+
   useEffect(() => {
     if (settings) {
       const whatsapp = settings.find((s) => s.key === "whatsapp_number");
@@ -558,6 +568,20 @@ export default function AdminSettings() {
         try {
           const parsed = JSON.parse(tuts.value);
           if (Array.isArray(parsed)) setTutorials(parsed);
+        } catch {}
+      }
+
+      const payment = settings.find((s) => s.key === "reseller_payment_config");
+      if (payment?.value) {
+        try {
+          const parsed = JSON.parse(payment.value);
+          setPaymentConfig({
+            nequiQr: parsed.nequiQr || "",
+            daviviendaQr: parsed.daviviendaQr || "",
+            instructions: parsed.instructions || "",
+            whatsappPhone: parsed.whatsappPhone || "",
+            whatsappMessage: parsed.whatsappMessage || "",
+          });
         } catch {}
       }
     }
@@ -641,6 +665,23 @@ export default function AdminSettings() {
     }
   };
 
+  const handleSavePayment = async () => {
+    setSavingPayment(true);
+    try {
+      await updateMutation.mutateAsync({
+        key: "reseller_payment_config",
+        value: JSON.stringify(paymentConfig),
+        description: "Configuración de métodos de pago para recargar saldo reseller",
+      });
+      await utils.admin.settings.list.invalidate();
+      toast.success("Configuración de pagos guardada. Los cambios ya son visibles en el portal reseller.");
+    } catch {
+      toast.error("Error al guardar la configuración de pagos");
+    } finally {
+      setSavingPayment(false);
+    }
+  };
+
   const handleSaveTutorials = async () => {
     setSavingTutorials(true);
     try {
@@ -684,6 +725,142 @@ export default function AdminSettings() {
             Gestiona la configuración general del sitio
           </p>
         </div>
+
+        {/* Configuración de Métodos de Pago */}
+        <Card className="border-green-200 bg-green-50/30">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-green-700">
+              <CreditCard className="h-5 w-5" />
+              Métodos de Pago — Agregar Saldo Reseller
+            </CardTitle>
+            <CardDescription>
+              Configura los QR de pago, las instrucciones y el WhatsApp para que los resellers puedan recargar su saldo. Las imágenes se subirán al servidor.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            {/* QR Nequi */}
+            <div className="space-y-2">
+              <Label className="font-semibold text-gray-700">QR Nequi</Label>
+              <div className="flex gap-3 items-start">
+                <div className="flex-1 space-y-2">
+                  <div className="flex gap-2">
+                    <Input
+                      value={paymentConfig.nequiQr}
+                      onChange={(e) => setPaymentConfig({ ...paymentConfig, nequiQr: e.target.value })}
+                      placeholder="URL de la imagen del QR de Nequi"
+                      className="text-sm"
+                    />
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          try {
+                            const url = await handleUploadImage(file);
+                            setPaymentConfig({ ...paymentConfig, nequiQr: url });
+                            toast.success("Imagen QR Nequi subida");
+                          } catch { toast.error("Error al subir imagen"); }
+                        }}
+                      />
+                      <div className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-md px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap">
+                        <Upload className="h-4 w-4" /> Subir
+                      </div>
+                    </label>
+                  </div>
+                  {paymentConfig.nequiQr && (
+                    <img src={paymentConfig.nequiQr} alt="QR Nequi" className="h-28 w-28 object-contain border rounded-lg bg-white p-1" />
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* QR Davivienda */}
+            <div className="space-y-2">
+              <Label className="font-semibold text-gray-700">QR Davivienda</Label>
+              <div className="flex gap-3 items-start">
+                <div className="flex-1 space-y-2">
+                  <div className="flex gap-2">
+                    <Input
+                      value={paymentConfig.daviviendaQr}
+                      onChange={(e) => setPaymentConfig({ ...paymentConfig, daviviendaQr: e.target.value })}
+                      placeholder="URL de la imagen del QR de Davivienda"
+                      className="text-sm"
+                    />
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          try {
+                            const url = await handleUploadImage(file);
+                            setPaymentConfig({ ...paymentConfig, daviviendaQr: url });
+                            toast.success("Imagen QR Davivienda subida");
+                          } catch { toast.error("Error al subir imagen"); }
+                        }}
+                      />
+                      <div className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-md px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap">
+                        <Upload className="h-4 w-4" /> Subir
+                      </div>
+                    </label>
+                  </div>
+                  {paymentConfig.daviviendaQr && (
+                    <img src={paymentConfig.daviviendaQr} alt="QR Davivienda" className="h-28 w-28 object-contain border rounded-lg bg-white p-1" />
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Instrucciones */}
+            <div className="space-y-2">
+              <Label className="font-semibold text-gray-700">Instrucciones de Pago</Label>
+              <Textarea
+                value={paymentConfig.instructions}
+                onChange={(e) => setPaymentConfig({ ...paymentConfig, instructions: e.target.value })}
+                placeholder="Ej: Escanea el QR con tu app Nequi o Davivienda. Luego reporta el pago por WhatsApp con el comprobante."
+                rows={3}
+                className="resize-none text-sm"
+              />
+            </div>
+
+            {/* WhatsApp para reportar pago */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="font-semibold text-gray-700">Número WhatsApp (para reportar pago)</Label>
+                <Input
+                  value={paymentConfig.whatsappPhone}
+                  onChange={(e) => setPaymentConfig({ ...paymentConfig, whatsappPhone: e.target.value })}
+                  placeholder="573334315646"
+                  className="text-sm"
+                />
+                <p className="text-xs text-muted-foreground">Sin + ni espacios. Ej: 573334315646</p>
+              </div>
+              <div className="space-y-2">
+                <Label className="font-semibold text-gray-700">Mensaje predeterminado de WhatsApp</Label>
+                <Input
+                  value={paymentConfig.whatsappMessage}
+                  onChange={(e) => setPaymentConfig({ ...paymentConfig, whatsappMessage: e.target.value })}
+                  placeholder="Hola, quiero reportar un pago para recargar mi saldo reseller."
+                  className="text-sm"
+                />
+              </div>
+            </div>
+
+            <Button
+              onClick={handleSavePayment}
+              disabled={savingPayment}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {savingPayment ? "Guardando..." : "Guardar Configuración de Pagos"}
+            </Button>
+          </CardContent>
+        </Card>
 
         {/* Tutoriales de Video */}
         <TutorialManager

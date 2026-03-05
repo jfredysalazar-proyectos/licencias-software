@@ -230,6 +230,29 @@ export const appRouter = router({
       }
     }),
 
+    getPaymentConfig: publicProcedure.query(async () => {
+      const setting = await db.getSetting("reseller_payment_config");
+      if (!setting?.value) return {
+        nequiQr: "",
+        daviviendaQr: "",
+        instructions: "",
+        whatsappPhone: "",
+        whatsappMessage: "",
+      };
+      try {
+        const config = JSON.parse(setting.value);
+        return {
+          nequiQr: config.nequiQr || "",
+          daviviendaQr: config.daviviendaQr || "",
+          instructions: config.instructions || "",
+          whatsappPhone: config.whatsappPhone || "",
+          whatsappMessage: config.whatsappMessage || "",
+        };
+      } catch {
+        return { nequiQr: "", daviviendaQr: "", instructions: "", whatsappPhone: "", whatsappMessage: "" };
+      }
+    }),
+
     getWhatsapp: publicProcedure.query(async () => {
       // Primero intentar con whatsapp_number (clave usada en la BD)
       const settingDirect = await db.getSetting("whatsapp_number");
