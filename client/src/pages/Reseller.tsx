@@ -766,7 +766,7 @@ export default function Reseller() {
     ? (tutorialsData!.tutorials as Tutorial[])
     : DEFAULT_TUTORIALS;
 
-  const submitRechargeMutation = trpc.customer.submitRecharge.useMutation({
+  const submitRechargeMutation = trpc.reseller.submitRecharge.useMutation({
     onSuccess: (data) => {
       setRechargeResult({ status: data.status, message: data.message, aiNotes: (data as any).aiNotes });
       setRechargeStep("result");
@@ -1275,6 +1275,7 @@ export default function Reseller() {
                       if (!rechargeVoucher) { toast.error("Sube el comprobante primero"); return; }
                       setRechargeStep("processing");
                       submitRechargeMutation.mutate({
+                        customerId: user!.id,
                         declaredAmount: Number(rechargeAmount),
                         paymentMethod: rechargeMethod,
                         voucherBase64: rechargeVoucher,
