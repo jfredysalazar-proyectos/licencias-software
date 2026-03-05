@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Save, Megaphone, Images, Trash2, Plus, GripVertical, Link, Upload, LayoutTemplate } from "lucide-react";
+import { Save, Megaphone, Images, Trash2, Plus, GripVertical, Link, Upload, LayoutTemplate, BookOpen, Youtube } from "lucide-react";
 
 // ─────────────────────────────────────────────
 // Types
@@ -17,6 +17,164 @@ interface CarouselSlide {
   imageUrl: string;
   title?: string;
   linkUrl?: string;
+}
+
+// ─────────────────────────────────────────────
+// Tutorial type
+// ─────────────────────────────────────────────
+interface Tutorial {
+  id: string;
+  title: string;
+  youtubeUrl: string;
+}
+
+// Helper: extraer ID de YouTube de cualquier formato de URL
+function extractYouTubeId(url: string): string | null {
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{11})/,
+    /youtube\.com\/shorts\/([\w-]{11})/,
+  ];
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) return match[1];
+  }
+  return null;
+}
+
+// ─────────────────────────────────────────────
+// Tutorial Manager Card
+// ─────────────────────────────────────────────
+function TutorialManager({
+  tutorials,
+  onChange,
+  onSave,
+  saving,
+}: {
+  tutorials: Tutorial[];
+  onChange: (t: Tutorial[]) => void;
+  onSave: () => void;
+  saving: boolean;
+}) {
+  const addTutorial = () => {
+    if (tutorials.length >= 12) return;
+    onChange([
+      ...tutorials,
+      { id: Date.now().toString(), title: "", youtubeUrl: "" },
+    ]);
+  };
+
+  const updateTutorial = (id: string, field: keyof Tutorial, value: string) => {
+    onChange(tutorials.map((t) => (t.id === id ? { ...t, [field]: value } : t)));
+  };
+
+  const removeTutorial = (id: string) => {
+    onChange(tutorials.filter((t) => t.id !== id));
+  };
+
+  return (
+    <Card className="border-red-200 bg-red-50/30">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-red-700">
+          <BookOpen className="h-5 w-5" />
+          Tutoriales de Video — Portal Reseller
+        </CardTitle>
+        <CardDescription>
+          Agrega hasta 12 videos de YouTube. Pega el enlace del video (cualquier formato: watch, youtu.be, embed) y escribe el título. Los videos se muestran en la pestaña Tutoriales del portal reseller.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {tutorials.length === 0 && (
+          <div className="text-center py-6 text-muted-foreground text-sm border-2 border-dashed border-red-200 rounded-xl">
+            No hay tutoriales. Haz clic en "Agregar Tutorial" para comenzar.
+          </div>
+        )}
+
+        <div className="space-y-3">
+          {tutorials.map((t, idx) => {
+            const ytId = extractYouTubeId(t.youtubeUrl);
+            const thumbUrl = ytId ? `https://img.youtube.com/vi/${ytId}/mqdefault.jpg` : null;
+            return (
+              <div key={t.id} className="border border-red-100 rounded-xl bg-white p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">Tutorial #{idx + 1}</span>
+                  <button
+                    onClick={() => removeTutorial(t.id)}
+                    className="text-red-400 hover:text-red-600 transition-colors p-1 rounded-lg hover:bg-red-50"
+                    title="Eliminar tutorial"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs text-gray-600">Título del video</Label>
+                  <Input
+                    value={t.title}
+                    onChange={(e) => updateTutorial(t.id, "title", e.target.value)}
+                    placeholder="Ej: Cómo instalar Windows 11 con licencia"
+                    className="text-sm"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs text-gray-600">Enlace de YouTube</Label>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Youtube className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-red-500" />
+                      <Input
+                        value={t.youtubeUrl}
+                        onChange={(e) => updateTutorial(t.id, "youtubeUrl", e.target.value)}
+                        placeholder="https://www.youtube.com/watch?v=..."
+                        className="pl-9 text-sm"
+                      />
+                    </div>
+                  </div>
+                  {t.youtubeUrl && !ytId && (
+                    <p className="text-xs text-red-500">URL de YouTube no válida. Usa el formato: youtube.com/watch?v=... o youtu.be/...</p>
+                  )}
+                </div>
+
+                {/* Miniatura previa */}
+                {thumbUrl && (
+                  <div className="relative rounded-lg overflow-hidden bg-gray-100 border border-gray-200" style={{ aspectRatio: "16/9", maxWidth: "280px" }}>
+                    <img src={thumbUrl} alt={t.title || "Miniatura"} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="bg-red-600 rounded-full p-2 opacity-80">
+                        <svg viewBox="0 0 24 24" className="h-5 w-5 fill-white"><path d="M8 5v14l11-7z"/></svg>
+                      </div>
+                    </div>
+                    <p className="absolute bottom-1 left-2 text-white text-xs font-medium drop-shadow-md line-clamp-1">{t.title}</p>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="flex gap-3 flex-wrap">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={addTutorial}
+            disabled={tutorials.length >= 12}
+            className="border-red-300 text-red-700 hover:bg-red-50"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Agregar Tutorial {tutorials.length > 0 && `(${tutorials.length}/12)`}
+          </Button>
+          <Button
+            type="button"
+            onClick={onSave}
+            disabled={saving}
+            className="bg-red-600 hover:bg-red-700 text-white"
+          >
+            <Save className="h-4 w-4 mr-2" />
+            {saving ? "Guardando..." : "Guardar Tutoriales"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 // ─────────────────────────────────────────────
@@ -361,6 +519,10 @@ export default function AdminSettings() {
   const [bannerSlides, setBannerSlides] = useState<CarouselSlide[]>([]);
   const [savingBanner, setSavingBanner] = useState(false);
 
+  // Tutorials state
+  const [tutorials, setTutorials] = useState<Tutorial[]>([]);
+  const [savingTutorials, setSavingTutorials] = useState(false);
+
   useEffect(() => {
     if (settings) {
       const whatsapp = settings.find((s) => s.key === "whatsapp_number");
@@ -388,6 +550,14 @@ export default function AdminSettings() {
         try {
           const parsed = JSON.parse(banner.value);
           if (Array.isArray(parsed)) setBannerSlides(parsed);
+        } catch {}
+      }
+
+      const tuts = settings.find((s) => s.key === "reseller_tutorials");
+      if (tuts?.value) {
+        try {
+          const parsed = JSON.parse(tuts.value);
+          if (Array.isArray(parsed)) setTutorials(parsed);
         } catch {}
       }
     }
@@ -471,6 +641,23 @@ export default function AdminSettings() {
     }
   };
 
+  const handleSaveTutorials = async () => {
+    setSavingTutorials(true);
+    try {
+      await updateMutation.mutateAsync({
+        key: "reseller_tutorials",
+        value: JSON.stringify(tutorials),
+        description: "Videos tutoriales del portal reseller",
+      });
+      await utils.admin.settings.list.invalidate();
+      toast.success("Tutoriales guardados. Los cambios ya son visibles en el portal reseller.");
+    } catch {
+      toast.error("Error al guardar los tutoriales");
+    } finally {
+      setSavingTutorials(false);
+    }
+  };
+
   const handleSaveBanner = async () => {
     setSavingBanner(true);
     try {
@@ -497,6 +684,14 @@ export default function AdminSettings() {
             Gestiona la configuración general del sitio
           </p>
         </div>
+
+        {/* Tutoriales de Video */}
+        <TutorialManager
+          tutorials={tutorials}
+          onChange={setTutorials}
+          onSave={handleSaveTutorials}
+          saving={savingTutorials}
+        />
 
         {/* Carrusel de Imágenes — Panel */}
         <CarouselManager

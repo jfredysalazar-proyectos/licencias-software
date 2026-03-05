@@ -219,6 +219,17 @@ export const appRouter = router({
       }
     }),
 
+    getTutorials: publicProcedure.query(async () => {
+      const setting = await db.getSetting("reseller_tutorials");
+      if (!setting?.value) return { tutorials: [] };
+      try {
+        const tutorials = JSON.parse(setting.value);
+        return { tutorials: Array.isArray(tutorials) ? tutorials : [] };
+      } catch {
+        return { tutorials: [] };
+      }
+    }),
+
     getWhatsapp: publicProcedure.query(async () => {
       // Primero intentar con whatsapp_number (clave usada en la BD)
       const settingDirect = await db.getSetting("whatsapp_number");

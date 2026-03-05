@@ -62,6 +62,24 @@ interface Announcement {
   imageUrl?: string;
 }
 
+interface Tutorial {
+  id: string;
+  title: string;
+  youtubeUrl: string;
+}
+
+// Helper: extraer ID de YouTube de cualquier formato de URL
+function extractYouTubeId(url: string): string | null {
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)?([\w-]{11})(?:[?&]|$)/,
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{11})/,
+  ];
+  // Patrón más robusto
+  const robust = /(?:youtube(?:-nocookie)?\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([\w-]{11})/;
+  const m = url.match(robust);
+  return m ? m[1] : null;
+}
+
 interface CarouselSlide {
   id: string;
   imageUrl: string;
@@ -592,7 +610,7 @@ export default function Reseller() {
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [user, setUser] = useState<ResellerUser | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [activeTab, setActiveTab] = useState<"dashboard" | "store" | "support">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "store" | "support" | "tutorials">("dashboard");
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showAllRecent, setShowAllRecent] = useState(false);
   const [descModal, setDescModal] = useState<Product | null>(null);
@@ -707,6 +725,32 @@ export default function Reseller() {
     staleTime: 5 * 60 * 1000,
   });
   const bannerSlides: CarouselSlide[] = (storeBannerData?.slides as CarouselSlide[]) || [];
+
+  const { data: tutorialsData } = trpc.settings.getTutorials.useQuery(undefined, {
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000,
+  });
+  // Videos de prueba por defecto si no hay tutoriales configurados
+  const DEFAULT_TUTORIALS: Tutorial[] = [
+    {
+      id: "demo1",
+      title: "Cómo instalar Windows 11 paso a paso",
+      youtubeUrl: "https://www.youtube.com/watch?v=tPGRTHFJNaA",
+    },
+    {
+      id: "demo2",
+      title: "Cómo activar Microsoft Office 365",
+      youtubeUrl: "https://www.youtube.com/watch?v=5bFCMoLF4Ck",
+    },
+    {
+      id: "demo3",
+      title: "Cómo instalar y activar Adobe Photoshop",
+      youtubeUrl: "https://www.youtube.com/watch?v=wRCBZOH1cAI",
+    },
+  ];
+  const tutorials: Tutorial[] = (tutorialsData?.tutorials as Tutorial[])?.length
+    ? (tutorialsData!.tutorials as Tutorial[])
+    : DEFAULT_TUTORIALS;
 
   const createOrderMutation = trpc.reseller.createOrder.useMutation({
     onSuccess: (data) => {
@@ -865,6 +909,7 @@ export default function Reseller() {
     { id: "dashboard", label: "Panel", icon: LayoutDashboard },
     { id: "store", label: "Tienda", icon: Store },
     { id: "support", label: "Soporte", icon: Headphones },
+    { id: "tutorials", label: "Tutoriales", icon: BookOpen },
   ] as const;
 
   return (
@@ -919,7 +964,7 @@ export default function Reseller() {
                   {label}
                 </button>
               ))}
-              <a href="#" className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-blue-700">Tutoriales</a>
+
             </nav>
 
             {/* Right side */}
@@ -949,7 +994,7 @@ export default function Reseller() {
                   {label}
                 </button>
               ))}
-              <a href="#" className="px-3 py-2 text-sm text-gray-600">Tutoriales</a>
+
             </nav>
           )}
         </div>
@@ -1093,6 +1138,92 @@ export default function Reseller() {
                 <button className="text-blue-600 text-xs underline">Ver más</button>
               </div>
             </div>
+          </div>
+        )}
+
+          {/* ════════════════════════════════
+            TUTORIALS TAB
+        ════════════════════════════════ */}
+        {activeTab === "tutorials" && (
+          <div className="space-y-6">
+            {/* Header */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+              <div className="flex items-center gap-3 mb-1">
+                <div className="bg-red-100 rounded-xl p-2">
+                  <BookOpen className="h-5 w-5 text-red-600" />
+                </div>
+                <h2 className="text-lg font-bold text-gray-900">Tutoriales</h2>
+              </div>
+              <p className="text-sm text-gray-500 ml-12">Aprende a instalar, configurar y activar los programas y licencias que adquieres en nuestra plataforma.</p>
+            </div>
+
+            {/* Grid de videos */}
+            {tutorials.length === 0 ? (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 py-16 text-center">
+                <BookOpen className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                <p className="text-gray-400 text-sm">No hay tutoriales disponibles aún.</p>
+                <p className="text-gray-400 text-xs mt-1">El administrador puede agregar videos desde el panel de configuración.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {tutorials.map((tut) => {
+                  const ytId = extractYouTubeId(tut.youtubeUrl);
+                  const thumbUrl = ytId
+                    ? `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`
+                    : null;
+                  const embedUrl = ytId
+                    ? `https://www.youtube.com/embed/${ytId}?rel=0&modestbranding=1`
+                    : null;
+                  return (
+                    <div
+                      key={tut.id}
+                      className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:shadow-md transition-shadow"
+                    >
+                      {/* Miniatura / Reproductor */}
+                      <div className="relative bg-gray-900" style={{ aspectRatio: "16/9" }}>
+                        {embedUrl ? (
+                          <iframe
+                            src={embedUrl}
+                            title={tut.title}
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                            className="absolute inset-0 w-full h-full"
+                            loading="lazy"
+                          />
+                        ) : thumbUrl ? (
+                          <img
+                            src={thumbUrl}
+                            alt={tut.title}
+                            className="absolute inset-0 w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <BookOpen className="h-10 w-10 text-gray-500" />
+                          </div>
+                        )}
+                      </div>
+                      {/* Título */}
+                      <div className="p-4 flex-1 flex flex-col justify-between">
+                        <h3 className="text-sm font-semibold text-gray-800 leading-snug line-clamp-2">
+                          {tut.title || "Sin título"}
+                        </h3>
+                        {tut.youtubeUrl && (
+                          <a
+                            href={tut.youtubeUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-3 inline-flex items-center gap-1.5 text-xs text-red-600 hover:text-red-700 font-medium transition-colors"
+                          >
+                            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-current flex-shrink-0"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                            Ver en YouTube
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
