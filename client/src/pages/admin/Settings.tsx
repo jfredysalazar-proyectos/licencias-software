@@ -3,10 +3,11 @@ import AdminLayout from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Save } from "lucide-react";
+import { Save, Megaphone } from "lucide-react";
 
 export default function AdminSettings() {
   const utils = trpc.useUtils();
@@ -16,24 +17,27 @@ export default function AdminSettings() {
     site_name: "",
     site_email: "",
   });
+  const [announcement, setAnnouncement] = useState("");
+  const [savingAnnouncement, setSavingAnnouncement] = useState(false);
 
   useEffect(() => {
     if (settings) {
       const whatsapp = settings.find((s) => s.key === "whatsapp_number");
       const siteName = settings.find((s) => s.key === "site_name");
       const siteEmail = settings.find((s) => s.key === "site_email");
+      const ann = settings.find((s) => s.key === "reseller_announcement");
 
       setFormData({
         whatsapp_number: whatsapp?.value || "",
         site_name: siteName?.value || "",
         site_email: siteEmail?.value || "",
       });
+      setAnnouncement(ann?.value || "");
     }
   }, [settings]);
 
   const updateMutation = trpc.admin.settings.update.useMutation({
     onSuccess: () => {
-      toast.success("Configuración actualizada exitosamente");
       utils.admin.settings.list.invalidate();
     },
     onError: (error) => {
@@ -44,7 +48,6 @@ export default function AdminSettings() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Update each setting
     const updates = [
       {
         key: "whatsapp_number",
@@ -65,11 +68,28 @@ export default function AdminSettings() {
 
     Promise.all(updates.map((update) => updateMutation.mutateAsync(update)))
       .then(() => {
-        toast.success("Todas las configuraciones actualizadas");
+        toast.success("Configuración actualizada exitosamente");
       })
       .catch(() => {
         toast.error("Error al actualizar algunas configuraciones");
       });
+  };
+
+  const handleSaveAnnouncement = async () => {
+    setSavingAnnouncement(true);
+    try {
+      await updateMutation.mutateAsync({
+        key: "reseller_announcement",
+        value: announcement,
+        description: "Anuncio en barra superior del portal reseller",
+      });
+      await utils.admin.settings.list.invalidate();
+      toast.success("Anuncio actualizado. Aparecerá en el portal reseller.");
+    } catch {
+      toast.error("Error al guardar el anuncio");
+    } finally {
+      setSavingAnnouncement(false);
+    }
   };
 
   return (
@@ -81,6 +101,49 @@ export default function AdminSettings() {
             Gestiona la configuración general del sitio
           </p>
         </div>
+
+        {/* Barra de Anuncios Reseller */}
+        <Card className="border-blue-200 bg-blue-50/40">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-blue-800">
+              <Megaphone className="h-5 w-5" />
+              Anuncio para Portal Reseller
+            </CardTitle>
+            <CardDescription>
+              El mensaje que escribas aquí aparecerá como una barra animada en la parte superior del portal reseller. Déjalo vacío para ocultarla.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="reseller_announcement">Mensaje del anuncio</Label>
+              <Textarea
+                id="reseller_announcement"
+                value={announcement}
+                onChange={(e) => setAnnouncement(e.target.value)}
+                placeholder="Ej: 🎉 Nuevos productos disponibles esta semana · Recarga tu saldo y aprovecha los descuentos · Contáctanos por WhatsApp para más info"
+                rows={3}
+                className="resize-none"
+              />
+              <p className="text-xs text-muted-foreground">
+                Puedes usar · para separar varios mensajes en la misma barra. Emojis permitidos.
+              </p>
+            </div>
+            {announcement && (
+              <div className="rounded-lg border border-blue-200 bg-blue-900 text-white px-4 py-2 overflow-hidden">
+                <p className="text-xs text-blue-300 mb-1">Vista previa:</p>
+                <p className="text-sm font-medium truncate">📢 {announcement}</p>
+              </div>
+            )}
+            <Button
+              onClick={handleSaveAnnouncement}
+              disabled={savingAnnouncement}
+              className="bg-blue-700 hover:bg-blue-800 text-white"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {savingAnnouncement ? "Guardando..." : "Guardar Anuncio"}
+            </Button>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>

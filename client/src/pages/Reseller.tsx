@@ -482,6 +482,12 @@ export default function Reseller() {
   const { data: whatsappData } = trpc.settings.getWhatsapp.useQuery();
   const whatsappPhone = whatsappData?.phone ?? null;
 
+  const { data: announcementData } = trpc.settings.getAnnouncement.useQuery(undefined, {
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000, // 5 minutos
+  });
+  const announcementMessage = announcementData?.message || "";
+
   const createOrderMutation = trpc.reseller.createOrder.useMutation({
     onSuccess: (data) => {
       if (data.success && user) {
@@ -642,6 +648,36 @@ export default function Reseller() {
 
   return (
     <div className="min-h-screen bg-gray-100">
+      {/* ── Barra de Anuncios Ticker ── */}
+      {announcementMessage && (
+        <div className="bg-blue-900 text-white overflow-hidden" style={{ height: "36px" }}>
+          <div className="flex items-center h-full">
+            <div className="shrink-0 bg-blue-700 px-3 h-full flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide">
+              <span>📢</span>
+              <span>Aviso</span>
+            </div>
+            <div className="overflow-hidden flex-1 relative">
+              <div
+                className="flex whitespace-nowrap"
+                style={{
+                  animation: "ticker-scroll 30s linear infinite",
+                }}
+              >
+                <span className="text-sm px-8">{announcementMessage}</span>
+                <span className="text-sm px-8" aria-hidden="true">{announcementMessage}</span>
+                <span className="text-sm px-8" aria-hidden="true">{announcementMessage}</span>
+              </div>
+            </div>
+          </div>
+          <style>{`
+            @keyframes ticker-scroll {
+              0%   { transform: translateX(0); }
+              100% { transform: translateX(-33.333%); }
+            }
+          `}</style>
+        </div>
+      )}
+
       {/* ── Header ── */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
