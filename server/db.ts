@@ -785,3 +785,12 @@ export async function updateRechargeRequest(
   if (!db) throw new Error("Database not available");
   await db.update(rechargeRequests).set(data).where(eq(rechargeRequests.id, id));
 }
+
+export async function getRechargeRequestByTransactionId(transactionId: string): Promise<RechargeRequest | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(rechargeRequests)
+    .where(eq(rechargeRequests.aiTransactionId, transactionId))
+    .limit(1);
+  return result[0];
+}

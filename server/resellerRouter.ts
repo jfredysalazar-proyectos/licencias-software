@@ -150,10 +150,14 @@ export const resellerRouter = router({
         } catch {}
       }
 
+      // LLAVE DESTINO OFICIAL — nunca cambiar sin autorización
+      const OWNER_KEY = "0091771324";
+
       // 3. Analyze voucher with AI Vision
       let aiVerified = 0;
       let aiExtractedAmount: number | null = null;
       let aiTransactionId: string | null = null;
+      let aiDestinationKey: string | null = null;
       let aiConfidence = "low";
       let aiNotes = "Pendiente de verificación manual.";
       let autoApproved = false;
@@ -169,16 +173,20 @@ Responde SIEMPRE en JSON válido con esta estructura exacta (sin texto adicional
   "isValid": boolean,
   "extractedAmount": number | null,
   "transactionId": string | null,
+  "destinationKey": string | null,
   "paymentMethod": "nequi" | "daviplata" | "otro" | null,
   "confidence": "high" | "medium" | "low",
   "notes": string,
-  "amountMatches": boolean
+  "amountMatches": boolean,
+  "destinationMatches": boolean
 }
 
 Criterios de validación:
 - isValid=true solo si: es un comprobante real de Nequi/Daviplata, tiene número de transacción visible, monto claro, fecha y hora.
 - isValid=false si: parece editado, generado por app falsa, es captura de pantalla de otra app, o no es un comprobante de pago.
 - amountMatches=true si el monto extraído coincide con ${input.declaredAmount} COP (±5% de tolerancia).
+- destinationKey: extrae el número de celular/llave destino del comprobante (el número al que se envió el dinero).
+- destinationMatches=true SOLO si la llave destino extraída es exactamente "${OWNER_KEY}" o contiene ese número.
 - confidence="high" solo si todos los datos son claramente legibles y el comprobante es inequívocamente auténtico.
 ${ownerAccountInfo}`;
 
@@ -189,7 +197,7 @@ ${ownerAccountInfo}`;
               role: "user",
               content: [
                 { type: "image_url", image_url: { url: imageForAI, detail: "high" } },
-                { type: "text", text: `Verifica este comprobante. Monto declarado: ${input.declaredAmount.toLocaleString('es-CO')} COP. Método: ${input.paymentMethod}. Responde solo en JSON.` }
+                { type: "text", text: `Verifica este comprobante. Monto declarado: ${input.declaredAmount.toLocaleString('es-CO')} COP. Método: ${input.paymentMethod}. Llave destino esperada: ${OWNER_KEY}. Responde solo en JSON.` }
               ]
             }
           ]
@@ -201,12 +209,17 @@ ${ownerAccountInfo}`;
           const aiResult = JSON.parse(jsonMatch[0]);
           aiExtractedAmount = aiResult.extractedAmount ? Math.round(Number(aiResult.extractedAmount)) : null;
           aiTransactionId = aiResult.transactionId || null;
+          aiDestinationKey = aiResult.destinationKey || null;
           aiConfidence = aiResult.confidence || "low";
           aiNotes = aiResult.notes || "";
 
-          if (aiResult.isValid && aiResult.amountMatches) {
+          // Bloqueo por llave destino incorrecta
+          if (aiResult.isValid && aiResult.destinationMatches === false) {
+            aiVerified = 2;
+            aiNotes = `El pago no fue enviado a la llave correcta (${OWNER_KEY}). Llave detectada: ${aiDestinationKey || "desconocida"}. Por favor realiza el pago a la llave ${OWNER_KEY}.`;
+          } else if (aiResult.isValid && aiResult.amountMatches) {
             aiVerified = 1;
-            if (aiResult.confidence === "high") {
+            if (aiResult.confidence === "high" && aiResult.destinationMatches !== false) {
               autoApproved = true;
             }
           } else {
@@ -216,6 +229,19 @@ ${ownerAccountInfo}`;
       } catch (err) {
         console.error("[AI Voucher] Error:", err);
         aiNotes = "Error al analizar con IA. Será revisado manualmente.";
+      }
+
+      // 3b. Anti-duplicado: verificar que el transactionId no haya sido usado antes
+      if (aiTransactionId) {
+        const existing = await db.getRechargeRequestByTransactionId(aiTransactionId);
+        if (existing) {
+          return {
+            success: false,
+            status: "duplicate" as const,
+            message: `Este comprobante ya fue procesado anteriormente (Solicitud #${existing.id}). No es posible usar el mismo comprobante dos veces.`,
+            requestId: existing.id,
+          };
+        }
       }
 
       // 4. Save recharge request
