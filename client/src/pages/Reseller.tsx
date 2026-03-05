@@ -386,6 +386,7 @@ export default function Reseller() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [activeTab, setActiveTab] = useState<"dashboard" | "store">("dashboard");
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showAllRecent, setShowAllRecent] = useState(false);
   const [descModal, setDescModal] = useState<Product | null>(null);
 
   // Form states
@@ -575,7 +576,7 @@ export default function Reseller() {
     })
     .sort((a, b) => new Date(a.expiresAt!).getTime() - new Date(b.expiresAt!).getTime());
 
-  const recentOrders = [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
+  const recentOrders = [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 12);
 
   // ─────────────────────────────────────────────
   // LOADING SCREEN (verificando token al recargar)
@@ -733,19 +734,30 @@ export default function Reseller() {
                     <p className="text-gray-400 text-sm mt-3">No hay compras aún.</p>
                   ) : (
                     <ul className="mt-3 space-y-2">
-                      {recentOrders.slice(0, 3).map((o) => {
+                      {(showAllRecent ? recentOrders : recentOrders.slice(0, 3)).map((o) => {
                         let items: any[] = [];
                         try { items = JSON.parse(o.items); } catch {}
+                        const dateStr = o.createdAt ? new Date(o.createdAt).toLocaleDateString("es-CO", { day: "2-digit", month: "short" }) : "";
                         return (
-                          <li key={o.id} className="text-xs text-gray-600 flex justify-between">
-                            <span className="truncate max-w-[140px]">{items[0]?.productName || `Pedido #${o.id}`}</span>
-                            <span className="font-medium text-blue-700 ml-2">${(o.totalAmount ?? 0).toLocaleString("es-CO")}</span>
+                          <li key={o.id} className="text-xs text-gray-600 flex justify-between items-center border-b border-gray-50 pb-1.5">
+                            <div className="flex flex-col min-w-0">
+                              <span className="truncate max-w-[160px] font-medium">{items[0]?.productName || `Pedido #${o.id}`}</span>
+                              <span className="text-gray-400 text-[10px]">{dateStr} · Pedido #{o.id}</span>
+                            </div>
+                            <span className="font-semibold text-blue-700 ml-2 shrink-0">${(o.totalAmount ?? 0).toLocaleString("es-CO")}</span>
                           </li>
                         );
                       })}
                     </ul>
                   )}
-                  <button onClick={() => setActiveTab("store")} className="text-blue-600 text-xs underline mt-3 block">Ver más</button>
+                  {recentOrders.length > 3 && (
+                    <button
+                      onClick={() => setShowAllRecent(!showAllRecent)}
+                      className="text-blue-600 text-xs underline mt-3 block hover:text-blue-800 transition-colors"
+                    >
+                      {showAllRecent ? "Ver menos" : `Ver más (${recentOrders.length - 3} más)`}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
