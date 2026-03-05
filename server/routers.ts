@@ -208,6 +208,17 @@ export const appRouter = router({
       }
     }),
 
+    getResellerStoreBanner: publicProcedure.query(async () => {
+      const setting = await db.getSetting("reseller_store_banner");
+      if (!setting?.value) return { slides: [] };
+      try {
+        const slides = JSON.parse(setting.value);
+        return { slides: Array.isArray(slides) ? slides : [] };
+      } catch {
+        return { slides: [] };
+      }
+    }),
+
     getWhatsapp: publicProcedure.query(async () => {
       // Primero intentar con whatsapp_number (clave usada en la BD)
       const settingDirect = await db.getSetting("whatsapp_number");

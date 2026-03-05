@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Save, Megaphone, Images, Trash2, Plus, GripVertical, Link, Upload } from "lucide-react";
+import { Save, Megaphone, Images, Trash2, Plus, GripVertical, Link, Upload, LayoutTemplate } from "lucide-react";
 
 // ─────────────────────────────────────────────
 // Types
@@ -216,6 +216,130 @@ function CarouselManager({
 }
 
 // ─────────────────────────────────────────────
+// Banner Carousel Manager Card (Tienda)
+// ─────────────────────────────────────────────
+function BannerCarouselManager({
+  slides,
+  onChange,
+  onSave,
+  saving,
+  uploadImage,
+}: {
+  slides: CarouselSlide[];
+  onChange: (slides: CarouselSlide[]) => void;
+  onSave: () => void;
+  saving: boolean;
+  uploadImage: (file: File) => Promise<string>;
+}) {
+  const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [uploading, setUploading] = useState<number | null>(null);
+
+  const addSlide = () => {
+    if (slides.length >= 6) { toast.error("Máximo 6 banners permitidos"); return; }
+    onChange([...slides, { id: crypto.randomUUID(), imageUrl: "", title: "", linkUrl: "" }]);
+  };
+
+  const removeSlide = (index: number) => onChange(slides.filter((_, i) => i !== index));
+
+  const updateSlide = (index: number, field: keyof CarouselSlide, value: string) =>
+    onChange(slides.map((s, i) => (i === index ? { ...s, [field]: value } : s)));
+
+  const handleFileChange = async (index: number, file: File | null) => {
+    if (!file) return;
+    setUploading(index);
+    try {
+      const url = await uploadImage(file);
+      updateSlide(index, "imageUrl", url);
+      toast.success("Imagen subida correctamente");
+    } catch { toast.error("Error al subir la imagen"); }
+    finally { setUploading(null); }
+  };
+
+  return (
+    <Card className="border-indigo-200 bg-indigo-50/40">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-indigo-800">
+          <LayoutTemplate className="h-5 w-5" />
+          Banner Carrusel — Sección Tienda
+        </CardTitle>
+        <CardDescription>
+          Gestiona hasta 6 banners horizontales que aparecerán en la parte superior de la sección Tienda del portal Reseller.
+          Recomendación: imágenes en proporción 1800×310 px (muy apaisadas).
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {slides.length === 0 && (
+          <div className="text-center py-8 text-muted-foreground border-2 border-dashed border-indigo-200 rounded-lg">
+            <LayoutTemplate className="h-10 w-10 mx-auto mb-2 opacity-40" />
+            <p className="text-sm">No hay banners configurados. Agrega el primero.</p>
+          </div>
+        )}
+        <div className="space-y-3">
+          {slides.map((slide, index) => (
+            <div key={slide.id} className="bg-white border border-gray-200 rounded-xl p-4 space-y-3 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm font-semibold text-indigo-700">
+                  <GripVertical className="h-4 w-4 text-gray-400" />
+                  Banner {index + 1}
+                </div>
+                <button onClick={() => removeSlide(index)} className="text-red-400 hover:text-red-600 transition-colors p-1 rounded">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+              {slide.imageUrl && (
+                <div className="relative w-full rounded-lg overflow-hidden border border-gray-200 bg-gray-50" style={{ aspectRatio: "1800/310" }}>
+                  <img src={slide.imageUrl} alt={`Banner ${index + 1}`} className="w-full h-full object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                </div>
+              )}
+              <div className="space-y-1">
+                <Label className="text-xs text-gray-600">URL de imagen</Label>
+                <div className="flex gap-2">
+                  <Input value={slide.imageUrl} onChange={(e) => updateSlide(index, "imageUrl", e.target.value)}
+                    placeholder="https://... o sube una imagen" className="text-sm flex-1" />
+                  <input type="file" accept="image/*" className="hidden"
+                    ref={(el) => { fileInputRefs.current[index] = el; }}
+                    onChange={(e) => handleFileChange(index, e.target.files?.[0] ?? null)} />
+                  <Button type="button" variant="outline" size="sm" disabled={uploading === index}
+                    onClick={() => fileInputRefs.current[index]?.click()} className="shrink-0">
+                    {uploading === index ? <span className="text-xs">Subiendo...</span> : <Upload className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label className="text-xs text-gray-600">Título (opcional)</Label>
+                  <Input value={slide.title || ""} onChange={(e) => updateSlide(index, "title", e.target.value)}
+                    placeholder="Ej: Ofertas de la semana" className="text-sm" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-gray-600 flex items-center gap-1"><Link className="h-3 w-3" /> Enlace (opcional)</Label>
+                  <Input value={slide.linkUrl || ""} onChange={(e) => updateSlide(index, "linkUrl", e.target.value)}
+                    placeholder="https://... o /reseller" className="text-sm" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-3 pt-1">
+          <Button type="button" variant="outline" onClick={addSlide} disabled={slides.length >= 6}
+            className="flex-1 border-indigo-300 text-indigo-700 hover:bg-indigo-50">
+            <Plus className="h-4 w-4 mr-2" /> Agregar Banner
+          </Button>
+          <Button onClick={onSave} disabled={saving} className="flex-1 bg-indigo-700 hover:bg-indigo-800 text-white">
+            <Save className="h-4 w-4 mr-2" />
+            {saving ? "Guardando..." : "Guardar Banners"}
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Recomendación: imágenes de 1800×310 px (proporción muy apaisada) para mejor visualización.
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────
 export default function AdminSettings() {
@@ -229,9 +353,13 @@ export default function AdminSettings() {
   const [announcement, setAnnouncement] = useState("");
   const [savingAnnouncement, setSavingAnnouncement] = useState(false);
 
-  // Carousel state
+  // Carousel state (Panel)
   const [carouselSlides, setCarouselSlides] = useState<CarouselSlide[]>([]);
   const [savingCarousel, setSavingCarousel] = useState(false);
+
+  // Banner carousel state (Tienda)
+  const [bannerSlides, setBannerSlides] = useState<CarouselSlide[]>([]);
+  const [savingBanner, setSavingBanner] = useState(false);
 
   useEffect(() => {
     if (settings) {
@@ -252,6 +380,14 @@ export default function AdminSettings() {
         try {
           const parsed = JSON.parse(carousel.value);
           if (Array.isArray(parsed)) setCarouselSlides(parsed);
+        } catch {}
+      }
+
+      const banner = settings.find((s) => s.key === "reseller_store_banner");
+      if (banner?.value) {
+        try {
+          const parsed = JSON.parse(banner.value);
+          if (Array.isArray(parsed)) setBannerSlides(parsed);
         } catch {}
       }
     }
@@ -335,6 +471,23 @@ export default function AdminSettings() {
     }
   };
 
+  const handleSaveBanner = async () => {
+    setSavingBanner(true);
+    try {
+      await updateMutation.mutateAsync({
+        key: "reseller_store_banner",
+        value: JSON.stringify(bannerSlides),
+        description: "Banner carrusel de la sección Tienda del portal reseller",
+      });
+      await utils.admin.settings.list.invalidate();
+      toast.success("Banners de Tienda actualizados. Los cambios ya son visibles.");
+    } catch {
+      toast.error("Error al guardar los banners");
+    } finally {
+      setSavingBanner(false);
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6 max-w-2xl">
@@ -345,12 +498,21 @@ export default function AdminSettings() {
           </p>
         </div>
 
-        {/* Carrusel de Imágenes */}
+        {/* Carrusel de Imágenes — Panel */}
         <CarouselManager
           slides={carouselSlides}
           onChange={setCarouselSlides}
           onSave={handleSaveCarousel}
           saving={savingCarousel}
+          uploadImage={handleUploadImage}
+        />
+
+        {/* Banner Carrusel — Tienda */}
+        <BannerCarouselManager
+          slides={bannerSlides}
+          onChange={setBannerSlides}
+          onSave={handleSaveBanner}
+          saving={savingBanner}
           uploadImage={handleUploadImage}
         />
 

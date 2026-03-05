@@ -70,7 +70,71 @@ interface CarouselSlide {
 }
 
 // ─────────────────────────────────────────────
-// Image Carousel (Panel Dashboard)
+// Shared Carousel Inner Content
+// ─────────────────────────────────────────────
+function CarouselInner({
+  slides, current, prev, next, setCurrent, resetTimer,
+}: {
+  slides: CarouselSlide[];
+  current: number;
+  prev: () => void;
+  next: () => void;
+  setCurrent: (i: number) => void;
+  resetTimer: () => void;
+}) {
+  const slide = slides[current];
+  return (
+    <div className="relative w-full h-full select-none">
+      <img
+        src={slide.imageUrl}
+        alt={slide.title || `Slide ${current + 1}`}
+        className="absolute inset-0 w-full h-full object-cover"
+        onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+      />
+      {slide.title && (
+        <>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 px-3 sm:px-5 pb-3 sm:pb-4 z-10">
+            <p className="text-white text-xs sm:text-sm font-semibold drop-shadow-md line-clamp-2">{slide.title}</p>
+          </div>
+        </>
+      )}
+      {slides.length > 1 && (
+        <>
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); prev(); }}
+            className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-20 bg-black/40 hover:bg-black/60 text-white rounded-full p-1 sm:p-1.5 transition-colors touch-manipulation"
+            aria-label="Anterior"
+          >
+            <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+          </button>
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); next(); }}
+            className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-20 bg-black/40 hover:bg-black/60 text-white rounded-full p-1 sm:p-1.5 transition-colors touch-manipulation"
+            aria-label="Siguiente"
+          >
+            <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
+          </button>
+          <div className="absolute bottom-2 sm:bottom-3 left-1/2 -translate-x-1/2 flex gap-1 sm:gap-1.5 z-20">
+            {slides.map((_, i) => (
+              <button
+                key={i}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCurrent(i); resetTimer(); }}
+                className={`h-1.5 sm:h-2 rounded-full transition-all touch-manipulation ${
+                  i === current ? "w-4 sm:w-5 bg-white" : "w-1.5 sm:w-2 bg-white/50"
+                }`}
+                aria-label={`Ir al slide ${i + 1}`}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// Image Carousel (Panel Dashboard) — Responsive
 // ─────────────────────────────────────────────
 function ImageCarousel({ slides }: { slides: CarouselSlide[] }) {
   const [current, setCurrent] = useState(0);
@@ -78,14 +142,12 @@ function ImageCarousel({ slides }: { slides: CarouselSlide[] }) {
 
   const resetTimer = () => {
     if (timerRef.current) clearInterval(timerRef.current);
-    if (slides.length > 1) {
+    if (slides.length > 1)
       timerRef.current = setInterval(() => setCurrent((c) => (c + 1) % slides.length), 4500);
-    }
   };
 
   useEffect(() => {
-    setCurrent(0);
-    resetTimer();
+    setCurrent(0); resetTimer();
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [slides.length]);
 
@@ -95,66 +157,61 @@ function ImageCarousel({ slides }: { slides: CarouselSlide[] }) {
   if (slides.length === 0) return null;
 
   const slide = slides[current];
-  const content = (
-    <div className="relative w-full h-full select-none">
-      {/* Image */}
-      <img
-        src={slide.imageUrl}
-        alt={slide.title || `Slide ${current + 1}`}
-        className="absolute inset-0 w-full h-full object-cover"
-        onError={(e) => {
-          (e.target as HTMLImageElement).style.display = "none";
-        }}
-      />
-      {/* Overlay gradient for title readability */}
-      {slide.title && (
-        <>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 px-5 pb-4 z-10">
-            <p className="text-white text-sm font-semibold drop-shadow-md">{slide.title}</p>
-          </div>
-        </>
-      )}
-      {/* Navigation arrows */}
-      {slides.length > 1 && (
-        <>
-          <button
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); prev(); }}
-            className="absolute left-3 top-1/2 -translate-y-1/2 z-20 bg-black/40 hover:bg-black/60 text-white rounded-full p-1.5 transition-colors"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <button
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); next(); }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 z-20 bg-black/40 hover:bg-black/60 text-white rounded-full p-1.5 transition-colors"
-          >
-            <ChevronRight className="h-5 w-5" />
-          </button>
-          {/* Dots */}
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
-            {slides.map((_, i) => (
-              <button
-                key={i}
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCurrent(i); resetTimer(); }}
-                className={`h-2 rounded-full transition-all ${
-                  i === current ? "w-5 bg-white" : "w-2 bg-white/50"
-                }`}
-              />
-            ))}
-          </div>
-        </>
+  const inner = <CarouselInner slides={slides} current={current} prev={prev} next={next} setCurrent={setCurrent} resetTimer={resetTimer} />;
+
+  return (
+    // En móvil: aspect-ratio 4/3 para que sea más alto y visible
+    // En tablet/desktop: altura fija clamp para coincidir con el grid
+    <div
+      className="relative rounded-xl overflow-hidden bg-gray-200 w-full"
+      style={{ height: "clamp(180px, 42vw, 550px)" }}
+    >
+      {slide.linkUrl ? (
+        <a href={slide.linkUrl} target="_blank" rel="noopener noreferrer" className="absolute inset-0 block">{inner}</a>
+      ) : (
+        <div className="absolute inset-0">{inner}</div>
       )}
     </div>
   );
+}
+
+// ─────────────────────────────────────────────
+// Banner Carousel (Tienda) — Responsive
+// ─────────────────────────────────────────────
+function BannerCarousel({ slides }: { slides: CarouselSlide[] }) {
+  const [current, setCurrent] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const resetTimer = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (slides.length > 1)
+      timerRef.current = setInterval(() => setCurrent((c) => (c + 1) % slides.length), 5000);
+  };
+
+  useEffect(() => {
+    setCurrent(0); resetTimer();
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [slides.length]);
+
+  const prev = () => { setCurrent((c) => (c - 1 + slides.length) % slides.length); resetTimer(); };
+  const next = () => { setCurrent((c) => (c + 1) % slides.length); resetTimer(); };
+
+  if (slides.length === 0) return null;
+
+  const slide = slides[current];
+  const inner = <CarouselInner slides={slides} current={current} prev={prev} next={next} setCurrent={setCurrent} resetTimer={resetTimer} />;
 
   return (
-    <div className="relative rounded-xl overflow-hidden bg-gray-200" style={{ height: "clamp(220px, 38vw, 550px)" }}>
+    // En móvil: altura mínima de 110px, en desktop hasta 310px
+    // Proporción 1800/310 ≈ 5.8:1 — usamos clamp para que sea usable en móvil
+    <div
+      className="relative rounded-xl overflow-hidden bg-gray-200 w-full"
+      style={{ height: "clamp(110px, 17vw, 310px)" }}
+    >
       {slide.linkUrl ? (
-        <a href={slide.linkUrl} target="_blank" rel="noopener noreferrer" className="absolute inset-0 block">
-          {content}
-        </a>
+        <a href={slide.linkUrl} target="_blank" rel="noopener noreferrer" className="absolute inset-0 block">{inner}</a>
       ) : (
-        <div className="absolute inset-0">{content}</div>
+        <div className="absolute inset-0">{inner}</div>
       )}
     </div>
   );
@@ -645,6 +702,12 @@ export default function Reseller() {
   });
   const carouselSlides: CarouselSlide[] = (carouselData?.slides as CarouselSlide[]) || [];
 
+  const { data: storeBannerData } = trpc.settings.getResellerStoreBanner.useQuery(undefined, {
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000,
+  });
+  const bannerSlides: CarouselSlide[] = (storeBannerData?.slides as CarouselSlide[]) || [];
+
   const createOrderMutation = trpc.reseller.createOrder.useMutation({
     onSuccess: (data) => {
       if (data.success && user) {
@@ -1039,8 +1102,12 @@ export default function Reseller() {
         ════════════════════════════════ */}
         {activeTab === "store" && (
           <div className="space-y-8">
-            {/* Announcement carousel in store too */}
-            <AnnouncementCarousel announcements={announcements} />
+            {/* Banner carrusel en Tienda: si hay banners usa BannerCarousel, si no el AnnouncementCarousel */}
+            {bannerSlides.length > 0 ? (
+              <BannerCarousel slides={bannerSlides} />
+            ) : (
+              <AnnouncementCarousel announcements={announcements} />
+            )}
 
             {/* ── Cuentas Instantáneas ── */}
             {instantProducts.length > 0 && (
