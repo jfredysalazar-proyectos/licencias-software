@@ -197,6 +197,17 @@ export const appRouter = router({
       return { message: setting?.value || "" };
     }),
 
+    getResellerCarousel: publicProcedure.query(async () => {
+      const setting = await db.getSetting("reseller_carousel");
+      if (!setting?.value) return { slides: [] };
+      try {
+        const slides = JSON.parse(setting.value);
+        return { slides: Array.isArray(slides) ? slides : [] };
+      } catch {
+        return { slides: [] };
+      }
+    }),
+
     getWhatsapp: publicProcedure.query(async () => {
       // Primero intentar con whatsapp_number (clave usada en la BD)
       const settingDirect = await db.getSetting("whatsapp_number");

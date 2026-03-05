@@ -62,6 +62,104 @@ interface Announcement {
   imageUrl?: string;
 }
 
+interface CarouselSlide {
+  id: string;
+  imageUrl: string;
+  title?: string;
+  linkUrl?: string;
+}
+
+// ─────────────────────────────────────────────
+// Image Carousel (Panel Dashboard)
+// ─────────────────────────────────────────────
+function ImageCarousel({ slides }: { slides: CarouselSlide[] }) {
+  const [current, setCurrent] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const resetTimer = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (slides.length > 1) {
+      timerRef.current = setInterval(() => setCurrent((c) => (c + 1) % slides.length), 4500);
+    }
+  };
+
+  useEffect(() => {
+    setCurrent(0);
+    resetTimer();
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [slides.length]);
+
+  const prev = () => { setCurrent((c) => (c - 1 + slides.length) % slides.length); resetTimer(); };
+  const next = () => { setCurrent((c) => (c + 1) % slides.length); resetTimer(); };
+
+  if (slides.length === 0) return null;
+
+  const slide = slides[current];
+  const content = (
+    <div className="relative w-full h-full select-none">
+      {/* Image */}
+      <img
+        src={slide.imageUrl}
+        alt={slide.title || `Slide ${current + 1}`}
+        className="absolute inset-0 w-full h-full object-cover"
+        onError={(e) => {
+          (e.target as HTMLImageElement).style.display = "none";
+        }}
+      />
+      {/* Overlay gradient for title readability */}
+      {slide.title && (
+        <>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 px-5 pb-4 z-10">
+            <p className="text-white text-sm font-semibold drop-shadow-md">{slide.title}</p>
+          </div>
+        </>
+      )}
+      {/* Navigation arrows */}
+      {slides.length > 1 && (
+        <>
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); prev(); }}
+            className="absolute left-3 top-1/2 -translate-y-1/2 z-20 bg-black/40 hover:bg-black/60 text-white rounded-full p-1.5 transition-colors"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); next(); }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 z-20 bg-black/40 hover:bg-black/60 text-white rounded-full p-1.5 transition-colors"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+          {/* Dots */}
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
+            {slides.map((_, i) => (
+              <button
+                key={i}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCurrent(i); resetTimer(); }}
+                className={`h-2 rounded-full transition-all ${
+                  i === current ? "w-5 bg-white" : "w-2 bg-white/50"
+                }`}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="relative rounded-xl overflow-hidden bg-gray-200" style={{ aspectRatio: "16/9" }}>
+      {slide.linkUrl ? (
+        <a href={slide.linkUrl} target="_blank" rel="noopener noreferrer" className="absolute inset-0 block">
+          {content}
+        </a>
+      ) : (
+        <div className="absolute inset-0">{content}</div>
+      )}
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────
 // Announcement Carousel
 // ─────────────────────────────────────────────
@@ -541,6 +639,12 @@ export default function Reseller() {
   });
   const announcementMessage = announcementData?.message || "";
 
+  const { data: carouselData } = trpc.settings.getResellerCarousel.useQuery(undefined, {
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000,
+  });
+  const carouselSlides: CarouselSlide[] = (carouselData?.slides as CarouselSlide[]) || [];
+
   const createOrderMutation = trpc.reseller.createOrder.useMutation({
     onSuccess: (data) => {
       if (data.success && user) {
@@ -797,6 +901,11 @@ export default function Reseller() {
         ════════════════════════════════ */}
         {activeTab === "dashboard" && (
           <div className="space-y-5">
+            {/* ── Carrusel de Imágenes ── */}
+            {carouselSlides.length > 0 && (
+              <ImageCarousel slides={carouselSlides} />
+            )}
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
               <div className="lg:col-span-2">
                 <AnnouncementCarousel announcements={announcements} />
