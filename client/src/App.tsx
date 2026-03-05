@@ -32,6 +32,7 @@ import Reseller from "./pages/Reseller";
 import ResellersAdmin from "./pages/admin/Resellers";
 import AdminResellerProducts from "./pages/admin/ResellerProducts";
 import AdminResellerOrders from "./pages/admin/ResellerOrders";
+import AdminRechargeRequests from "./pages/admin/RechargeRequests";
 
 function Router() {
   return (
@@ -71,6 +72,7 @@ function Router() {
       <Route path="/admin/sold-licenses" component={AdminSoldLicenses} />
       <Route path="/admin/sold-licenses/:id/edit" component={AdminSoldLicenseEdit} />
       <Route path="/admin/payment-methods" component={AdminPaymentMethods} />
+      <Route path="/admin/recharge-requests" component={AdminRechargeRequests} />
       
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}

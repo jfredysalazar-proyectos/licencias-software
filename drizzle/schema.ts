@@ -224,3 +224,27 @@ export const paymentMethods = mysqlTable("payment_methods", {
 
 export type PaymentMethod = typeof paymentMethods.$inferSelect;
 export type InsertPaymentMethod = typeof paymentMethods.$inferInsert;
+
+/**
+ * Recharge requests table for automatic balance top-up via AI voucher verification
+ */
+export const rechargeRequests = mysqlTable("recharge_requests", {
+  id: int("id").autoincrement().primaryKey(),
+  customerId: int("customerId").notNull(),
+  customerEmail: varchar("customerEmail", { length: 320 }).notNull(),
+  customerName: varchar("customerName", { length: 200 }),
+  declaredAmount: int("declaredAmount").notNull(), // Amount declared by reseller in COP
+  voucherImageUrl: text("voucherImageUrl").notNull(), // URL of uploaded voucher image
+  paymentMethod: varchar("paymentMethod", { length: 50 }), // "nequi" | "daviplata" | "otro"
+  aiVerified: int("aiVerified").default(0).notNull(), // 0=not verified, 1=verified ok, 2=rejected by AI
+  aiExtractedAmount: int("aiExtractedAmount"), // Amount extracted by AI from voucher
+  aiTransactionId: varchar("aiTransactionId", { length: 200 }), // Transaction ID extracted by AI
+  aiConfidence: varchar("aiConfidence", { length: 20 }), // "high" | "medium" | "low"
+  aiNotes: text("aiNotes"), // AI analysis notes
+  status: mysqlEnum("status", ["pending", "approved", "rejected"]).default("pending").notNull(),
+  adminNotes: text("adminNotes"), // Admin notes when manually reviewing
+  processedAt: timestamp("processedAt"), // When it was approved/rejected
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type RechargeRequest = typeof rechargeRequests.$inferSelect;
+export type InsertRechargeRequest = typeof rechargeRequests.$inferInsert;

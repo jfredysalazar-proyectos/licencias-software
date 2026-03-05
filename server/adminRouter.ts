@@ -757,4 +757,45 @@ export const adminRouter = router({
         return { success: true };
       }),
   }),
+
+  // ==================== RECHARGE REQUESTS ====================
+  rechargeRequests: router({
+    list: adminProcedure.query(async () => {
+      return await db.getAllRechargeRequests();
+    }),
+
+    approve: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        adminNotes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const request = await db.getRechargeRequestById(input.id);
+        if (!request) throw new TRPCError({ code: "NOT_FOUND", message: "Solicitud no encontrada" });
+        if (request.status === "approved") throw new TRPCError({ code: "BAD_REQUEST", message: "Ya fue aprobada" });
+        await db.updateCustomerBalance(request.customerId, request.declaredAmount);
+        await db.updateRechargeRequest(input.id, {
+          status: "approved",
+          adminNotes: input.adminNotes || "Aprobado por el administrador",
+          processedAt: new Date(),
+        });
+        return { success: true };
+      }),
+
+    reject: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        adminNotes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const request = await db.getRechargeRequestById(input.id);
+        if (!request) throw new TRPCError({ code: "NOT_FOUND", message: "Solicitud no encontrada" });
+        await db.updateRechargeRequest(input.id, {
+          status: "rejected",
+          adminNotes: input.adminNotes || "Rechazado por el administrador",
+          processedAt: new Date(),
+        });
+        return { success: true };
+      }),
+  }),
 });

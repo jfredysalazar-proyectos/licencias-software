@@ -615,6 +615,13 @@ export default function Reseller() {
   const [showAllRecent, setShowAllRecent] = useState(false);
   const [descModal, setDescModal] = useState<Product | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  // Recharge flow states
+  const [rechargeStep, setRechargeStep] = useState<"qr" | "upload" | "processing" | "result">("qr");
+  const [rechargeAmount, setRechargeAmount] = useState("");
+  const [rechargeMethod, setRechargeMethod] = useState<"nequi" | "daviplata" | "otro">("nequi");
+  const [rechargeVoucher, setRechargeVoucher] = useState<string>(""); // base64
+  const [rechargeVoucherName, setRechargeVoucherName] = useState("");
+  const [rechargeResult, setRechargeResult] = useState<{ status: string; message: string; aiNotes?: string } | null>(null);
 
   // Form states
   const [email, setEmail] = useState("");
@@ -758,6 +765,20 @@ export default function Reseller() {
   const tutorials: Tutorial[] = (tutorialsData?.tutorials as Tutorial[])?.length
     ? (tutorialsData!.tutorials as Tutorial[])
     : DEFAULT_TUTORIALS;
+
+  const submitRechargeMutation = trpc.customer.submitRecharge.useMutation({
+    onSuccess: (data) => {
+      setRechargeResult({ status: data.status, message: data.message, aiNotes: (data as any).aiNotes });
+      setRechargeStep("result");
+      if (data.status === "approved" && user) {
+        setUser({ ...user, balance: user.balance + Number(rechargeAmount) });
+      }
+    },
+    onError: (error) => {
+      setRechargeResult({ status: "error", message: error.message || "Error al procesar la solicitud." });
+      setRechargeStep("result");
+    },
+  });
 
   const createOrderMutation = trpc.reseller.createOrder.useMutation({
     onSuccess: (data) => {
@@ -1037,15 +1058,23 @@ export default function Reseller() {
       </header>
 
       {/* ────────────────────────────────
-          MODAL: AGREGAR SALDO
+          MODAL: AGREGAR SALDO (3 pasos + verificación IA)
       ──────────────────────────────── */}
       {showPaymentModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ backgroundColor: "rgba(0,0,0,0.55)" }}
-          onClick={(e) => { if (e.target === e.currentTarget) setShowPaymentModal(false); }}
+          style={{ backgroundColor: "rgba(0,0,0,0.6)" }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && rechargeStep !== "processing") {
+              setShowPaymentModal(false);
+              setRechargeStep("qr");
+              setRechargeAmount("");
+              setRechargeVoucher("");
+              setRechargeResult(null);
+            }
+          }}
         >
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto">
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
               <div className="flex items-center gap-2">
@@ -1054,81 +1083,281 @@ export default function Reseller() {
                 </div>
                 <div>
                   <h2 className="font-bold text-gray-900 text-base">Agregar Saldo</h2>
-                  <p className="text-xs text-gray-500">Selecciona tu método de pago preferido</p>
+                  <p className="text-xs text-gray-500">
+                    {rechargeStep === "qr" && "Paso 1: Realiza el pago"}
+                    {rechargeStep === "upload" && "Paso 2: Sube el comprobante"}
+                    {rechargeStep === "processing" && "Verificando comprobante..."}
+                    {rechargeStep === "result" && "Resultado de la verificación"}
+                  </p>
                 </div>
               </div>
-              <button
-                onClick={() => setShowPaymentModal(false)}
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
-              >
-                <X className="h-5 w-5" />
-              </button>
+              {rechargeStep !== "processing" && (
+                <button
+                  onClick={() => {
+                    setShowPaymentModal(false);
+                    setRechargeStep("qr");
+                    setRechargeAmount("");
+                    setRechargeVoucher("");
+                    setRechargeResult(null);
+                  }}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              )}
             </div>
 
-            {/* Body */}
-            <div className="p-5 space-y-5">
-              {/* Instrucciones */}
-              {paymentConfig.instructions && (
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                  <p className="text-sm text-blue-800 leading-relaxed whitespace-pre-line">{paymentConfig.instructions}</p>
-                </div>
-              )}
-
-              {/* QR Cards */}
-              {(paymentConfig.nequiQr || paymentConfig.daviviendaQr) ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {paymentConfig.nequiQr && (
-                    <div className="border border-gray-200 rounded-2xl p-4 flex flex-col items-center gap-3 bg-white shadow-sm">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-pink-500"></div>
-                        <span className="font-bold text-gray-800 text-sm">Nequi</span>
-                      </div>
-                      <img
-                        src={paymentConfig.nequiQr}
-                        alt="QR Nequi"
-                        className="w-full max-w-[180px] h-auto object-contain rounded-xl border border-gray-100"
-                      />
-                      <p className="text-xs text-gray-500 text-center">Escanea con tu app Nequi</p>
+            {/* Progress indicator */}
+            {rechargeStep !== "result" && (
+              <div className="px-5 pt-4">
+                <div className="flex items-center gap-2">
+                  {["qr", "upload", "processing"].map((step, i) => (
+                    <div key={step} className="flex items-center gap-2 flex-1">
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                        rechargeStep === step ? "bg-blue-600 text-white" :
+                        ["qr", "upload", "processing"].indexOf(rechargeStep) > i ? "bg-green-500 text-white" :
+                        "bg-gray-200 text-gray-500"
+                      }`}>{i + 1}</div>
+                      {i < 2 && <div className={`h-0.5 flex-1 ${
+                        ["qr", "upload", "processing"].indexOf(rechargeStep) > i ? "bg-green-400" : "bg-gray-200"
+                      }`}></div>}
                     </div>
-                  )}
-                  {paymentConfig.daviviendaQr && (
-                    <div className="border border-gray-200 rounded-2xl p-4 flex flex-col items-center gap-3 bg-white shadow-sm">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-red-600"></div>
-                        <span className="font-bold text-gray-800 text-sm">Davivienda</span>
-                      </div>
-                      <img
-                        src={paymentConfig.daviviendaQr}
-                        alt="QR Davivienda"
-                        className="w-full max-w-[180px] h-auto object-contain rounded-xl border border-gray-100"
-                      />
-                      <p className="text-xs text-gray-500 text-center">Escanea con tu app Davivienda</p>
-                    </div>
-                  )}
+                  ))}
                 </div>
-              ) : (
-                <div className="text-center py-8 text-gray-400">
-                  <QrCode className="h-12 w-12 mx-auto mb-2 opacity-40" />
-                  <p className="text-sm">Métodos de pago no configurados aún.</p>
-                  <p className="text-xs mt-1">Contacta al administrador para más información.</p>
-                </div>
-              )}
+              </div>
+            )}
 
-              {/* Botón Reportar Pago por WhatsApp */}
-              {(paymentConfig.whatsappPhone || "573334315646") && (
+            {/* ── PASO 1: QR de pago ── */}
+            {rechargeStep === "qr" && (
+              <div className="p-5 space-y-4">
+                {paymentConfig.instructions && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                    <p className="text-sm text-blue-800 leading-relaxed whitespace-pre-line">{paymentConfig.instructions}</p>
+                  </div>
+                )}
+
+                {(paymentConfig.nequiQr || paymentConfig.daviviendaQr) ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {paymentConfig.nequiQr && (
+                      <div
+                        onClick={() => setRechargeMethod("nequi")}
+                        className={`border-2 rounded-2xl p-4 flex flex-col items-center gap-3 cursor-pointer transition-all ${
+                          rechargeMethod === "nequi" ? "border-pink-500 bg-pink-50" : "border-gray-200 bg-white hover:border-pink-300"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full bg-pink-500"></div>
+                          <span className="font-bold text-gray-800 text-sm">Nequi</span>
+                          {rechargeMethod === "nequi" && <span className="text-xs bg-pink-500 text-white px-1.5 py-0.5 rounded-full">Seleccionado</span>}
+                        </div>
+                        <img src={paymentConfig.nequiQr} alt="QR Nequi" className="w-full max-w-[160px] h-auto object-contain rounded-xl border border-gray-100" />
+                        <p className="text-xs text-gray-500 text-center">Escanea con tu app Nequi</p>
+                      </div>
+                    )}
+                    {paymentConfig.daviviendaQr && (
+                      <div
+                        onClick={() => setRechargeMethod("daviplata")}
+                        className={`border-2 rounded-2xl p-4 flex flex-col items-center gap-3 cursor-pointer transition-all ${
+                          rechargeMethod === "daviplata" ? "border-red-500 bg-red-50" : "border-gray-200 bg-white hover:border-red-300"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full bg-red-600"></div>
+                          <span className="font-bold text-gray-800 text-sm">Daviplata</span>
+                          {rechargeMethod === "daviplata" && <span className="text-xs bg-red-500 text-white px-1.5 py-0.5 rounded-full">Seleccionado</span>}
+                        </div>
+                        <img src={paymentConfig.daviviendaQr} alt="QR Daviplata" className="w-full max-w-[160px] h-auto object-contain rounded-xl border border-gray-100" />
+                        <p className="text-xs text-gray-500 text-center">Escanea con tu app Daviplata</p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-gray-400">
+                    <QrCode className="h-12 w-12 mx-auto mb-2 opacity-40" />
+                    <p className="text-sm">Métodos de pago no configurados aún.</p>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Monto a recargar (COP)</label>
+                  <input
+                    type="number"
+                    min="1000"
+                    placeholder="Ej: 50000"
+                    value={rechargeAmount}
+                    onChange={(e) => setRechargeAmount(e.target.value)}
+                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Ingresa exactamente el monto que vas a transferir.</p>
+                </div>
+
+                <button
+                  onClick={() => {
+                    if (!rechargeAmount || Number(rechargeAmount) < 1000) {
+                      toast.error("Ingresa un monto válido (mínimo $1.000 COP)");
+                      return;
+                    }
+                    setRechargeStep("upload");
+                  }}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-colors"
+                >
+                  Ya realicé el pago → Subir comprobante
+                </button>
+
                 <a
-                  href={`https://wa.me/${paymentConfig.whatsappPhone || "573334315646"}?text=${encodeURIComponent(paymentConfig.whatsappMessage || `Hola, quiero reportar un pago para recargar mi saldo reseller.\n\nUsuario: ${user?.email || ""}`)}`}
+                  href={`https://wa.me/${paymentConfig.whatsappPhone || "573334315646"}?text=${encodeURIComponent(`Hola, quiero reportar un pago para recargar mi saldo reseller.\n\nUsuario: ${user?.email || ""}`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2.5 w-full bg-green-500 hover:bg-green-600 active:bg-green-700 text-white font-semibold py-3 rounded-xl transition-colors shadow-sm"
+                  className="flex items-center justify-center gap-2 w-full border border-green-400 text-green-600 hover:bg-green-50 font-medium py-2.5 rounded-xl transition-colors text-sm"
                 >
-                  <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current flex-shrink-0" xmlns="http://www.w3.org/2000/svg">
+                  <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg">
                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                   </svg>
-                  Reportar Pago por WhatsApp
+                  Reportar por WhatsApp (sin IA)
                 </a>
-              )}
-            </div>
+              </div>
+            )}
+
+            {/* ── PASO 2: Subir comprobante ── */}
+            {rechargeStep === "upload" && (
+              <div className="p-5 space-y-4">
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                  <p className="text-sm text-amber-800 font-medium">Monto a recargar: <span className="font-bold">${Number(rechargeAmount).toLocaleString("es-CO")} COP</span> por <span className="font-bold capitalize">{rechargeMethod}</span></p>
+                  <p className="text-xs text-amber-700 mt-1">Sube la captura de pantalla del comprobante de pago. La IA lo verificará automáticamente.</p>
+                </div>
+
+                <div
+                  className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all ${
+                    rechargeVoucher ? "border-green-400 bg-green-50" : "border-gray-300 hover:border-blue-400 hover:bg-blue-50"
+                  }`}
+                  onClick={() => document.getElementById("voucher-input")?.click()}
+                >
+                  <input
+                    id="voucher-input"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      if (file.size > 10 * 1024 * 1024) { toast.error("La imagen no puede superar 10 MB"); return; }
+                      setRechargeVoucherName(file.name);
+                      const reader = new FileReader();
+                      reader.onload = (ev) => setRechargeVoucher(ev.target?.result as string || "");
+                      reader.readAsDataURL(file);
+                    }}
+                  />
+                  {rechargeVoucher ? (
+                    <div className="space-y-2">
+                      <img src={rechargeVoucher} alt="Comprobante" className="max-h-48 mx-auto rounded-xl object-contain" />
+                      <p className="text-xs text-green-600 font-medium">{rechargeVoucherName}</p>
+                      <p className="text-xs text-gray-400">Toca para cambiar la imagen</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="text-4xl">📸</div>
+                      <p className="text-sm font-medium text-gray-700">Toca para subir el comprobante</p>
+                      <p className="text-xs text-gray-400">PNG, JPG, WEBP — máx. 10 MB</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setRechargeStep("qr")}
+                    className="flex-1 border border-gray-300 text-gray-600 font-medium py-2.5 rounded-xl hover:bg-gray-50 transition-colors text-sm"
+                  >
+                    Atrás
+                  </button>
+                  <button
+                    disabled={!rechargeVoucher}
+                    onClick={() => {
+                      if (!rechargeVoucher) { toast.error("Sube el comprobante primero"); return; }
+                      setRechargeStep("processing");
+                      submitRechargeMutation.mutate({
+                        declaredAmount: Number(rechargeAmount),
+                        paymentMethod: rechargeMethod,
+                        voucherBase64: rechargeVoucher,
+                        voucherFileName: rechargeVoucherName,
+                      });
+                    }}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded-xl transition-colors text-sm"
+                  >
+                    Verificar con IA
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ── PASO 3: Procesando ── */}
+            {rechargeStep === "processing" && (
+              <div className="p-10 flex flex-col items-center gap-5">
+                <div className="relative">
+                  <div className="w-16 h-16 rounded-full border-4 border-blue-200 border-t-blue-600 animate-spin"></div>
+                  <div className="absolute inset-0 flex items-center justify-center text-2xl">🤖</div>
+                </div>
+                <div className="text-center">
+                  <p className="font-bold text-gray-800 text-base">Analizando comprobante...</p>
+                  <p className="text-sm text-gray-500 mt-1">La IA está verificando tu pago. Esto puede tomar unos segundos.</p>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-2">
+                  <div className="bg-blue-600 h-2 rounded-full animate-pulse" style={{ width: "70%" }}></div>
+                </div>
+              </div>
+            )}
+
+            {/* ── RESULTADO ── */}
+            {rechargeStep === "result" && rechargeResult && (
+              <div className="p-5 space-y-4">
+                <div className={`rounded-2xl p-5 text-center ${
+                  rechargeResult.status === "approved" ? "bg-green-50 border border-green-200" :
+                  rechargeResult.status === "pending" ? "bg-amber-50 border border-amber-200" :
+                  "bg-red-50 border border-red-200"
+                }`}>
+                  <div className="text-4xl mb-3">
+                    {rechargeResult.status === "approved" ? "✅" : rechargeResult.status === "pending" ? "⏳" : "❌"}
+                  </div>
+                  <p className={`font-bold text-base ${
+                    rechargeResult.status === "approved" ? "text-green-700" :
+                    rechargeResult.status === "pending" ? "text-amber-700" : "text-red-700"
+                  }`}>
+                    {rechargeResult.status === "approved" ? "¡Saldo acreditado!" :
+                     rechargeResult.status === "pending" ? "En revisión" : "No verificado"}
+                  </p>
+                  <p className="text-sm text-gray-600 mt-2">{rechargeResult.message}</p>
+                  {rechargeResult.aiNotes && (
+                    <p className="text-xs text-gray-400 mt-2 italic">{rechargeResult.aiNotes}</p>
+                  )}
+                </div>
+
+                {(rechargeResult.status !== "approved") && (
+                  <a
+                    href={`https://wa.me/${paymentConfig.whatsappPhone || "573334315646"}?text=${encodeURIComponent(`Hola, necesito soporte con mi recarga de saldo.\n\nUsuario: ${user?.email || ""}\nMonto: $${Number(rechargeAmount).toLocaleString("es-CO")} COP\nMétodo: ${rechargeMethod}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-xl transition-colors"
+                  >
+                    <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                    </svg>
+                    Contactar soporte por WhatsApp
+                  </a>
+                )}
+
+                <button
+                  onClick={() => {
+                    setShowPaymentModal(false);
+                    setRechargeStep("qr");
+                    setRechargeAmount("");
+                    setRechargeVoucher("");
+                    setRechargeResult(null);
+                  }}
+                  className="w-full border border-gray-300 text-gray-600 font-medium py-2.5 rounded-xl hover:bg-gray-50 transition-colors text-sm"
+                >
+                  Cerrar
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

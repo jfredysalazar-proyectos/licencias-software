@@ -73,4 +73,43 @@ export async function runAutoMigrations() {
     console.error("[Auto-Migration] Error:", error);
     // No lanzar el error para que el servidor pueda iniciar
   }
+
+  // ==================== RECHARGE REQUESTS TABLE ====================
+  try {
+    const db = await getDb();
+    if (!db) return;
+    await db.execute(sql`SELECT 1 FROM recharge_requests LIMIT 1`);
+    console.log("[Auto-Migration] recharge_requests table exists");
+  } catch (error: any) {
+    const errorCode = error.code || error.cause?.code;
+    const errorNum = error.errno || error.cause?.errno;
+    if (errorCode === 'ER_NO_SUCH_TABLE' || errorNum === 1146) {
+      console.log("[Auto-Migration] Creating recharge_requests table...");
+      const db = await getDb();
+      if (!db) return;
+      await db.execute(sql`
+        CREATE TABLE recharge_requests (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          customerId INT NOT NULL,
+          customerEmail VARCHAR(320) NOT NULL,
+          customerName VARCHAR(200),
+          declaredAmount INT NOT NULL,
+          voucherImageUrl TEXT NOT NULL,
+          paymentMethod VARCHAR(50),
+          aiVerified INT DEFAULT 0 NOT NULL,
+          aiExtractedAmount INT,
+          aiTransactionId VARCHAR(200),
+          aiConfidence VARCHAR(20),
+          aiNotes TEXT,
+          status ENUM('pending','approved','rejected') DEFAULT 'pending' NOT NULL,
+          adminNotes TEXT,
+          processedAt TIMESTAMP NULL,
+          createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+        )
+      `);
+      console.log("[Auto-Migration] recharge_requests table created!");
+    } else {
+      console.error("[Auto-Migration] recharge_requests error:", error);
+    }
+  }
 }

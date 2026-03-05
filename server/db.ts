@@ -1,6 +1,6 @@
 import { eq, like, and, desc, asc, sql, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, categories, Category, InsertCategory, products, Product, InsertProduct, orders, Order, InsertOrder, admins, Admin, InsertAdmin, settings, Setting, InsertSetting, customers, Customer, InsertCustomer, productVariants, ProductVariant, InsertProductVariant, variantOptions, VariantOption, InsertVariantOption, productSkus, ProductSku, InsertProductSku, soldLicenses, SoldLicense, InsertSoldLicense, paymentMethods, PaymentMethod, InsertPaymentMethod } from "../drizzle/schema";
+import { InsertUser, users, categories, Category, InsertCategory, products, Product, InsertProduct, orders, Order, InsertOrder, admins, Admin, InsertAdmin, settings, Setting, InsertSetting, customers, Customer, InsertCustomer, productVariants, ProductVariant, InsertProductVariant, variantOptions, VariantOption, InsertVariantOption, productSkus, ProductSku, InsertProductSku, soldLicenses, SoldLicense, InsertSoldLicense, paymentMethods, PaymentMethod, InsertPaymentMethod, rechargeRequests, RechargeRequest, InsertRechargeRequest } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -747,4 +747,41 @@ export async function updatePaymentMethod(
   if (!db) throw new Error("Database not available");
 
   await db.update(paymentMethods).set(data).where(eq(paymentMethods.id, id));
+}
+
+// ==================== RECHARGE REQUESTS FUNCTIONS ====================
+
+export async function createRechargeRequest(data: InsertRechargeRequest): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(rechargeRequests).values(data);
+  return result[0].insertId;
+}
+
+export async function getRechargeRequestById(id: number): Promise<RechargeRequest | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(rechargeRequests).where(eq(rechargeRequests.id, id)).limit(1);
+  return result[0];
+}
+
+export async function getAllRechargeRequests(): Promise<RechargeRequest[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(rechargeRequests).orderBy(desc(rechargeRequests.createdAt));
+}
+
+export async function getRechargeRequestsByCustomer(customerId: number): Promise<RechargeRequest[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(rechargeRequests).where(eq(rechargeRequests.customerId, customerId)).orderBy(desc(rechargeRequests.createdAt));
+}
+
+export async function updateRechargeRequest(
+  id: number,
+  data: Partial<Omit<RechargeRequest, "id" | "createdAt">>
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(rechargeRequests).set(data).where(eq(rechargeRequests.id, id));
 }
