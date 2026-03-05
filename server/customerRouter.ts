@@ -4,7 +4,7 @@ import * as db from "./db";
 import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 import { TRPCError } from "@trpc/server";
-import { invokeLLM } from "./_core/llm";
+import { invokeLLMVision } from "./_core/llm";
 import { storagePut } from "./storage";
 import { nanoid } from "nanoid";
 
@@ -26,8 +26,14 @@ async function verifyToken(token: string) {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
     return payload as { customerId: number; email: string };
-  } catch (error) {
-    throw new TRPCError({ code: "UNAUTHORIZED", message: "Token inválido" });
+  } catch (error: any) {
+    const isExpired = error?.code === "ERR_JWT_EXPIRED";
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: isExpired
+        ? "Tu sesión ha expirado. Por favor cierra sesión e inicia sesión nuevamente."
+        : "Sesión inválida. Por favor cierra sesión e inicia sesión nuevamente.",
+    });
   }
 }
 
@@ -252,7 +258,7 @@ Criterios de validación:
 - confidence="high" solo si todos los datos son claramente legibles y el comprobante es inequívocamente auténtico.
 ${ownerAccountInfo}`;
 
-        const response = await invokeLLM({
+        const response = await invokeLLMVision({
           messages: [
             { role: "system", content: systemPrompt },
             {

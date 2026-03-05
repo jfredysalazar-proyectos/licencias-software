@@ -265,6 +265,46 @@ const normalizeResponseFormat = ({
   };
 };
 
+// ── Abacus.AI RouteLLM Vision ─────────────────────────────────────────────
+// Función dedicada para análisis de imágenes usando Abacus.AI RouteLLM.
+// Compatible con el formato OpenAI (multimodal image_url).
+export async function invokeLLMVision(params: InvokeParams): Promise<InvokeResult> {
+  const abacusKey = ENV.abacusApiKey;
+  const abacusUrl = ENV.abacusApiUrl;
+
+  if (!abacusKey) {
+    // Fallback al LLM principal si no hay clave de Abacus
+    return invokeLLM(params);
+  }
+
+  const { messages, maxTokens, max_tokens } = params;
+
+  const payload: Record<string, unknown> = {
+    model: "gpt-4.1",  // Modelo con vision en Abacus RouteLLM
+    messages: messages.map(normalizeMessage),
+    max_tokens: maxTokens || max_tokens || 1024,
+    temperature: 0.1,
+  };
+
+  const response = await fetch(`${abacusUrl.replace(/\/$/, "")}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${abacusKey}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Abacus RouteLLM Vision failed: ${response.status} ${response.statusText} – ${errorText}`
+    );
+  }
+
+  return (await response.json()) as InvokeResult;
+}
+
 export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
   assertApiKey();
 
