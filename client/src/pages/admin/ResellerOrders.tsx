@@ -132,7 +132,13 @@ export default function ResellerOrders() {
       setExpiresAtInput("");
     }
     const items = parseItems(order.items);
-    setAccountDataInput(items[0]?.accountData || "");
+    const rawAccountData = items[0]?.accountData || "";
+    const isEncoded = items[0]?.accountDataEncoded === true;
+    // Si estaba en base64 (bug anterior), decodificar para mostrar texto legible
+    const decodedAccountData = isEncoded && rawAccountData
+      ? atob(rawAccountData)
+      : rawAccountData;
+    setAccountDataInput(decodedAccountData);
   };
 
   const handleSave = () => {

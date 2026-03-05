@@ -341,9 +341,8 @@ export async function updateOrderExpiry(
     if (current[0]) {
       let items: any[] = [];
       try { items = JSON.parse(current[0].items); } catch {}
-      // Add accountData to each item - store as base64 to avoid JSON control character issues
-      const safeAccountData = Buffer.from(accountData, 'utf8').toString('base64');
-      items = items.map((item: any) => ({ ...item, accountData: safeAccountData, accountDataEncoded: true }));
+      // Add accountData to each item - JSON.stringify handles escaping of special chars (newlines, etc.)
+      items = items.map((item: any) => ({ ...item, accountData: accountData, accountDataEncoded: false }));
       updateData.items = JSON.stringify(items);
     }
   }
