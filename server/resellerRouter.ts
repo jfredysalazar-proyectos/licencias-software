@@ -4,7 +4,7 @@ import * as db from "./db";
 import { TRPCError } from "@trpc/server";
 import axios from "axios";
 import { nanoid } from "nanoid";
-import { storagePut } from "./_core/storage";
+import { storagePut } from "./storage";
 import { invokeLLMVision } from "./_core/llm";
 
 // Middleware for reseller authentication
