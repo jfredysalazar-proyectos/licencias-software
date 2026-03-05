@@ -1113,9 +1113,9 @@ export default function Reseller() {
             {instantProducts.length > 0 && (
               <section>
                 <div className="text-center mb-5">
-                  <h2 className="text-2xl font-bold text-blue-700 uppercase tracking-wide">Cuentas Instantáneas</h2>
+                  <h2 className="text-2xl font-bold text-blue-700 uppercase tracking-wide">LICENCIAS Y CUENTAS INSTANTÁNEAS</h2>
                   <div className="w-24 h-0.5 bg-blue-700 mx-auto mt-1 mb-2" />
-                  <p className="text-gray-500 text-sm">Podras comprar las siguientes cuentas de forma inmediata con el saldo que tengas en la plataforma.</p>
+                  <p className="text-gray-500 text-sm">Podrás comprar las siguientes licencias y cuentas de forma inmediata con el saldo que tengas en la plataforma.</p>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                   {instantProducts.map((product) => (
