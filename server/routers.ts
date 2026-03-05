@@ -193,13 +193,17 @@ export const appRouter = router({
   // ==================== PUBLIC SETTINGS ====================
   settings: router({
     getWhatsapp: publicProcedure.query(async () => {
-      const setting = await db.getSetting("whatsapp_config");
-      if (!setting) return { phone: null };
+      // Primero intentar con whatsapp_number (clave usada en la BD)
+      const settingDirect = await db.getSetting("whatsapp_number");
+      if (settingDirect?.value) return { phone: settingDirect.value };
+      // Fallback: intentar con whatsapp_config (formato JSON legacy)
+      const settingConfig = await db.getSetting("whatsapp_config");
+      if (!settingConfig) return { phone: null };
       try {
-        const config = JSON.parse(setting.value || "{}");
-        return { phone: config.admin_phone || null };
+        const config = JSON.parse(settingConfig.value || "{}");
+        return { phone: config.admin_phone || config.phone || null };
       } catch {
-        return { phone: null };
+        return { phone: settingConfig.value || null };
       }
     }),
   }),
