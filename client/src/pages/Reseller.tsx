@@ -220,6 +220,59 @@ function ProductCard({ product, onBuy, onAddCart, onInfo, isOnDemand }: {
 }
 
 // ─────────────────────────────────────────────
+// Floating WhatsApp Support Button
+// ─────────────────────────────────────────────
+const WHATSAPP_SUPPORT_PHONE = "573334315646";
+
+function FloatingWhatsAppSupport({ user }: { user: ResellerUser | null }) {
+  const [hovered, setHovered] = useState(false);
+
+  const handleClick = () => {
+    const name = user?.name || user?.email || "Reseller";
+    const msg = [
+      `Hola, soy *${name}* y tengo una consulta como Reseller de Licencias de Software Colombia.`,
+      ``,
+      `Por favor, ¿me pueden ayudar?`,
+    ].join("\n");
+    window.open(
+      `https://wa.me/${WHATSAPP_SUPPORT_PHONE}?text=${encodeURIComponent(msg)}`,
+      "_blank"
+    );
+  };
+
+  return (
+    <div className="fixed bottom-24 left-6 z-50 flex flex-col items-start gap-2">
+      {/* Tooltip */}
+      {hovered && (
+        <div className="bg-gray-900 text-white text-xs font-medium px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap animate-fade-in">
+          Soporte Reseller
+        </div>
+      )}
+      {/* Button */}
+      <button
+        onClick={handleClick}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        title="Contactar soporte por WhatsApp"
+        className="w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110 active:scale-95"
+        style={{ background: "#25D366" }}
+        aria-label="Soporte WhatsApp"
+      >
+        {/* WhatsApp SVG icon */}
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 32 32"
+          className="w-8 h-8"
+          fill="white"
+        >
+          <path d="M16.003 2.667C8.637 2.667 2.667 8.637 2.667 16c0 2.363.627 4.675 1.817 6.699L2.667 29.333l6.797-1.783A13.28 13.28 0 0 0 16.003 29.333c7.363 0 13.33-5.97 13.33-13.333 0-7.363-5.967-13.333-13.33-13.333zm0 24.267a11.02 11.02 0 0 1-5.617-1.537l-.403-.24-4.033 1.057 1.077-3.923-.263-.413A10.99 10.99 0 0 1 5.003 16c0-6.067 4.933-11 11-11s11 4.933 11 11-4.933 11-11 11zm6.04-8.23c-.33-.167-1.953-.963-2.257-1.073-.303-.11-.523-.167-.743.167-.22.33-.853 1.073-1.047 1.293-.193.22-.387.247-.717.083-.33-.167-1.393-.513-2.653-1.637-.98-.873-1.643-1.953-1.837-2.283-.193-.33-.02-.51.147-.673.15-.147.33-.383.497-.573.167-.19.22-.33.33-.55.11-.22.057-.413-.027-.58-.083-.167-.743-1.793-1.017-2.457-.267-.643-.54-.557-.743-.567l-.633-.01c-.22 0-.577.083-.88.413-.303.33-1.153 1.127-1.153 2.747s1.18 3.187 1.343 3.407c.167.22 2.323 3.547 5.627 4.973.787.34 1.4.543 1.877.697.787.25 1.503.213 2.07.13.633-.093 1.953-.797 2.227-1.567.273-.77.273-1.43.19-1.567-.08-.137-.3-.22-.63-.387z" />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
 // Floating WhatsApp Cart
 // ─────────────────────────────────────────────
 function FloatingCart({ cart, onRemove, onUpdateQty, onCheckout, onClear, whatsappPhone, user }: {
@@ -1004,6 +1057,9 @@ export default function Reseller() {
         whatsappPhone={whatsappPhone}
         user={user}
       />
+
+      {/* ── Floating WhatsApp Support ── */}
+      <FloatingWhatsAppSupport user={user} />
     </div>
   );
 }
