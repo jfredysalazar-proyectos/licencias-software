@@ -148,7 +148,7 @@ function ImageCarousel({ slides }: { slides: CarouselSlide[] }) {
   );
 
   return (
-    <div className="relative rounded-xl overflow-hidden bg-gray-200" style={{ aspectRatio: "16/9" }}>
+    <div className="relative rounded-xl overflow-hidden bg-gray-200" style={{ height: "clamp(220px, 38vw, 550px)" }}>
       {slide.linkUrl ? (
         <a href={slide.linkUrl} target="_blank" rel="noopener noreferrer" className="absolute inset-0 block">
           {content}
@@ -901,14 +901,14 @@ export default function Reseller() {
         ════════════════════════════════ */}
         {activeTab === "dashboard" && (
           <div className="space-y-5">
-            {/* ── Carrusel de Imágenes ── */}
-            {carouselSlides.length > 0 && (
-              <ImageCarousel slides={carouselSlides} />
-            )}
-
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
               <div className="lg:col-span-2">
-                <AnnouncementCarousel announcements={announcements} />
+                {/* Carrusel de imágenes si hay slides, si no muestra el AnnouncementCarousel */}
+                {carouselSlides.length > 0 ? (
+                  <ImageCarousel slides={carouselSlides} />
+                ) : (
+                  <AnnouncementCarousel announcements={announcements} />
+                )}
               </div>
               <div className="flex flex-col gap-4">
                 {/* Saldo */}
