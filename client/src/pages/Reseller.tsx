@@ -661,8 +661,25 @@ export default function Reseller() {
       setIsAuthenticated(true);
     }
     if (meQuery.error) {
-      // Token inválido o expirado: limpiar
-      localStorage.removeItem("resellerToken");
+      // Si el error es PENDING_APPROVAL, mostrar pantalla de aprobación pendiente
+      if (meQuery.error.message === "PENDING_APPROVAL") {
+        setPendingApproval(true);
+        // Intentar obtener el email del token (no es crítico)
+        const token = localStorage.getItem("resellerToken");
+        if (token) {
+          try {
+            const parts = token.split(".");
+            if (parts.length === 3) {
+              const payload = JSON.parse(atob(parts[1]));
+              if (payload.email) setPendingEmail(payload.email);
+            }
+          } catch {}
+        }
+        localStorage.removeItem("resellerToken");
+      } else {
+        // Token inválido o expirado: limpiar
+        localStorage.removeItem("resellerToken");
+      }
       setIsAuthenticated(false);
     }
   }, [meQuery.data, meQuery.error]);
@@ -695,14 +712,14 @@ export default function Reseller() {
   // ── tRPC mutations ──
   const registerMutation = trpc.customer.register.useMutation({
     onSuccess: (data) => {
-      if ((data as any).pendingApproval) {
+      // Si no hay token o viene pendingApproval, mostrar pantalla de aprobación
+      const isPending = !data.token || (data as any).pendingApproval === true;
+      if (isPending) {
         setPendingApproval(true);
-        setPendingEmail(data.customer.email || email);
+        setPendingEmail((data.customer && data.customer.email) || email);
         return;
       }
-      if (data.token) {
-        localStorage.setItem("resellerToken", data.token);
-      }
+      localStorage.setItem("resellerToken", data.token as string);
       setUser(data.customer as any);
       setIsAuthenticated(true);
       toast.success("¡Cuenta creada exitosamente!");

@@ -46,8 +46,11 @@ const customerProcedure = publicProcedure.use(async ({ ctx, next }) => {
   const payload = await verifyToken(token);
   
   const customer = await db.getCustomerById(payload.customerId);
-  if (!customer || !customer.active) {
-    throw new TRPCError({ code: "UNAUTHORIZED", message: "Cliente no encontrado o inactivo" });
+  if (!customer) {
+    throw new TRPCError({ code: "UNAUTHORIZED", message: "Cliente no encontrado" });
+  }
+  if (!customer.active) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "PENDING_APPROVAL" });
   }
 
   return next({
