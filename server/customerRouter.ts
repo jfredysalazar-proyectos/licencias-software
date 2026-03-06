@@ -82,21 +82,20 @@ export const customerRouter = router({
       // Hash password
       const passwordHash = await bcrypt.hash(input.password, 10);
 
-      // Create customer
+      // Create customer with active=0 (pending admin approval)
       const customerId = await db.createCustomer({
         email: input.email,
         passwordHash,
         name: input.name,
         phone: input.phone,
-        active: 1,
+        active: 0, // Pending admin approval
+        role: 'customer',
       });
-
-      // Generate token
-      const token = await generateToken(customerId, input.email);
 
       return {
         success: true,
-        token,
+        token: null,
+        pendingApproval: true,
         customer: {
           id: customerId,
           email: input.email,
@@ -130,7 +129,7 @@ export const customerRouter = router({
       if (!customer.active) {
         throw new TRPCError({ 
           code: "FORBIDDEN", 
-          message: "Cuenta desactivada" 
+          message: "PENDING_APPROVAL" 
         });
       }
 

@@ -407,6 +407,24 @@ export const adminRouter = router({
           });
           return { success: true, id };
         }),
+      // Approve pending reseller registration
+      approve: adminProcedure
+        .input(z.object({ id: z.number() }))
+        .mutation(async ({ input }) => {
+          await db.approveCustomer(input.id);
+          return { success: true };
+        }),
+      // Reject and delete pending reseller registration
+      reject: adminProcedure
+        .input(z.object({ id: z.number() }))
+        .mutation(async ({ input }) => {
+          await db.deleteCustomer(input.id);
+          return { success: true };
+        }),
+      // List pending approval customers
+      listPending: adminProcedure.query(async () => {
+        return await db.getPendingCustomers();
+      }),
     }),
   }),
 

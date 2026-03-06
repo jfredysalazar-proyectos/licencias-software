@@ -424,6 +424,24 @@ export async function updateCustomerRole(id: number, role: "customer" | "reselle
   await db.update(customers).set({ role }).where(eq(customers.id, id));
 }
 
+export async function approveCustomer(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(customers).set({ active: 1, role: 'reseller' }).where(eq(customers.id, id));
+}
+
+export async function deleteCustomer(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(customers).where(eq(customers.id, id));
+}
+
+export async function getPendingCustomers(): Promise<Customer[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(customers).where(eq(customers.active, 0)).orderBy(desc(customers.createdAt));
+}
+
 export async function getCustomerOrders(customerId: number): Promise<Order[]> {
   const db = await getDb();
   if (!db) return [];
