@@ -80,6 +80,18 @@ export async function runAutoMigrations() {
     if (!db) return;
     await db.execute(sql`SELECT 1 FROM recharge_requests LIMIT 1`);
     console.log("[Auto-Migration] recharge_requests table exists");
+
+    // Migrate voucherImageUrl from TEXT to MEDIUMTEXT to support base64 images
+    try {
+      await db.execute(sql`
+        ALTER TABLE recharge_requests
+        MODIFY COLUMN voucherImageUrl MEDIUMTEXT NOT NULL
+      `);
+      console.log("[Auto-Migration] voucherImageUrl migrated to MEDIUMTEXT");
+    } catch (alterErr: any) {
+      // Ignore if already MEDIUMTEXT or error is not critical
+      console.log("[Auto-Migration] voucherImageUrl alter skipped:", alterErr?.message || alterErr);
+    }
   } catch (error: any) {
     const errorCode = error.code || error.cause?.code;
     const errorNum = error.errno || error.cause?.errno;
@@ -94,7 +106,7 @@ export async function runAutoMigrations() {
           customerEmail VARCHAR(320) NOT NULL,
           customerName VARCHAR(200),
           declaredAmount INT NOT NULL,
-          voucherImageUrl TEXT NOT NULL,
+          voucherImageUrl MEDIUMTEXT NOT NULL,
           paymentMethod VARCHAR(50),
           aiVerified INT DEFAULT 0 NOT NULL,
           aiExtractedAmount INT,

@@ -133,11 +133,36 @@ export const resellerRouter = router({
       const fileName = `vouchers/${nanoid(12)}.${ext}`;
 
       let voucherImageUrl = "";
+
+      // Try Imgur API first (no credentials needed, free public hosting)
       try {
-        const uploaded = await storagePut(fileName, buffer, `image/${ext}`);
-        voucherImageUrl = uploaded.url;
-      } catch (err) {
-        voucherImageUrl = `data:image/${ext};base64,${base64Data.substring(0, 100)}...`;
+        const imgurResponse = await axios.post(
+          "https://api.imgur.com/3/image",
+          { image: base64Data, type: "base64" },
+          {
+            headers: { Authorization: "Client-ID 546c25a59c58ad7" },
+            timeout: 15000,
+          }
+        );
+        if (imgurResponse.data?.data?.link) {
+          voucherImageUrl = imgurResponse.data.data.link;
+          console.log("[Voucher] Uploaded to Imgur:", voucherImageUrl);
+        }
+      } catch (imgurErr) {
+        console.warn("[Voucher] Imgur upload failed, trying storage proxy...", imgurErr);
+      }
+
+      // Fallback: try Manus storage proxy
+      if (!voucherImageUrl) {
+        try {
+          const uploaded = await storagePut(fileName, buffer, `image/${ext}`);
+          voucherImageUrl = uploaded.url;
+          console.log("[Voucher] Uploaded to storage proxy:", voucherImageUrl);
+        } catch (storageErr) {
+          console.warn("[Voucher] Storage proxy failed, saving base64...", storageErr);
+          // Last resort: save full base64 (column is MEDIUMTEXT, supports up to 16MB)
+          voucherImageUrl = `data:image/${ext};base64,${base64Data}`;
+        }
       }
 
       // 2. Get payment config for owner account details
