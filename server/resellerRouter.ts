@@ -258,6 +258,7 @@ ${ownerAccountInfo}`;
         aiConfidence,
         aiNotes,
         status: autoApproved ? "approved" : "pending",
+        adminNotes: autoApproved ? "Auto-aprobado por IA con alta confianza" : null,
         processedAt: autoApproved ? new Date() : null,
       });
 

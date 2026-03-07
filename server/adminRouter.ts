@@ -7,6 +7,7 @@ import { admins } from "../drizzle/schema";
 import { storagePut } from "./storage";
 import sharp from "sharp";
 import { nanoid } from "nanoid";
+import { invokeLLMVision } from "./_core/llm";
 
 // Admin context type
 interface AdminContext {
@@ -814,6 +815,122 @@ export const adminRouter = router({
           processedAt: new Date(),
         });
         return { success: true };
+      }),
+
+    // Verify a voucher image sent by WhatsApp to check if already credited
+    verifyVoucher: adminProcedure
+      .input(z.object({
+        voucherBase64: z.string(),
+        voucherFileName: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const OWNER_KEY = "0091771324";
+
+        // 1. Analyze voucher with AI Vision to extract transaction data
+        let aiTransactionId: string | null = null;
+        let aiExtractedAmount: number | null = null;
+        let aiDestinationKey: string | null = null;
+        let aiNotes = "No se pudo analizar el comprobante.";
+        let aiIsValid = false;
+        let aiConfidence = "low";
+
+        try {
+          const base64Data = input.voucherBase64.replace(/^data:image\/\w+;base64,/, "");
+          const ext = (input.voucherFileName?.split('.').pop() || 'jpg').toLowerCase();
+          const imageForAI = input.voucherBase64.startsWith("data:")
+            ? input.voucherBase64
+            : `data:image/${ext};base64,${base64Data}`;
+
+          const systemPrompt = `Eres un sistema experto en verificación de comprobantes de pago colombianos (Nequi y Daviplata).
+Responde SIEMPRE en JSON válido con esta estructura exacta (sin texto adicional):
+{
+  "isValid": boolean,
+  "extractedAmount": number | null,
+  "transactionId": string | null,
+  "destinationKey": string | null,
+  "paymentMethod": "nequi" | "daviplata" | "otro" | null,
+  "confidence": "high" | "medium" | "low",
+  "notes": string,
+  "destinationMatches": boolean
+}
+Criterios: isValid=true si es comprobante real con número de transacción visible, monto claro, fecha y hora.
+destinationMatches=true SOLO si la llave destino extraída es exactamente "${OWNER_KEY}" o contiene ese número.`;
+
+          const response = await invokeLLMVision({
+            messages: [
+              { role: "system", content: systemPrompt },
+              {
+                role: "user",
+                content: [
+                  { type: "image_url", image_url: { url: imageForAI, detail: "high" } },
+                  { type: "text", text: `Analiza este comprobante de pago y extrae toda la información disponible. Llave destino esperada: ${OWNER_KEY}. Responde solo en JSON.` }
+                ]
+              }
+            ]
+          });
+
+          const content = response.choices?.[0]?.message?.content || "";
+          const jsonMatch = content.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const aiResult = JSON.parse(jsonMatch[0]);
+            aiTransactionId = aiResult.transactionId || null;
+            aiExtractedAmount = aiResult.extractedAmount ? Math.round(Number(aiResult.extractedAmount)) : null;
+            aiDestinationKey = aiResult.destinationKey || null;
+            aiNotes = aiResult.notes || "";
+            aiIsValid = aiResult.isValid || false;
+            aiConfidence = aiResult.confidence || "low";
+          }
+        } catch (err) {
+          console.error("[Admin VerifyVoucher] AI error:", err);
+          aiNotes = "Error al analizar con IA. Intenta de nuevo.";
+        }
+
+        // 2. Search in DB by transactionId
+        let existingRequest = null;
+        if (aiTransactionId) {
+          existingRequest = await db.getRechargeRequestByTransactionId(aiTransactionId);
+        }
+
+        // 3. If not found by transactionId, search by amount (last 30 days)
+        let similarRequests: Awaited<ReturnType<typeof db.getAllRechargeRequests>> = [];
+        if (aiExtractedAmount) {
+          const allRequests = await db.getAllRechargeRequests();
+          const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+          similarRequests = allRequests.filter(r => {
+            const createdAt = new Date(r.createdAt);
+            return Math.abs(r.declaredAmount - (aiExtractedAmount || 0)) < 1000
+              && createdAt > thirtyDaysAgo;
+          });
+        }
+
+        return {
+          aiIsValid,
+          aiTransactionId,
+          aiExtractedAmount,
+          aiDestinationKey,
+          aiNotes,
+          aiConfidence,
+          destinationMatchesOwner: aiDestinationKey ? aiDestinationKey.includes(OWNER_KEY) : null,
+          existingRequest: existingRequest ? {
+            id: existingRequest.id,
+            status: existingRequest.status,
+            declaredAmount: existingRequest.declaredAmount,
+            customerName: existingRequest.customerName,
+            customerEmail: existingRequest.customerEmail,
+            processedAt: existingRequest.processedAt,
+            createdAt: existingRequest.createdAt,
+            aiNotes: existingRequest.aiNotes,
+          } : null,
+          similarRequests: similarRequests.map(r => ({
+            id: r.id,
+            status: r.status,
+            declaredAmount: r.declaredAmount,
+            customerName: r.customerName,
+            customerEmail: r.customerEmail,
+            processedAt: r.processedAt,
+            createdAt: r.createdAt,
+          })),
+        };
       }),
   }),
 });
