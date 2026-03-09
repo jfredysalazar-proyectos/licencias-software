@@ -14,13 +14,11 @@ export default function SoldLicenseEdit() {
   const [, navigate] = useLocation();
   const licenseId = Number(id);
 
-  const { data: licenses, isLoading } = trpc.admin.soldLicenses.list.useQuery(
-    undefined,
-    { retry: 1 }
+  const { data: license, isLoading } = trpc.admin.soldLicenses.getById.useQuery(
+    { id: licenseId },
+    { retry: 1, enabled: !!licenseId }
   );
   const { data: products } = trpc.admin.products.list.useQuery();
-
-  const license = licenses?.find((l: any) => l.id === licenseId);
 
   const [formData, setFormData] = useState({
     customerName: "",
